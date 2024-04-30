@@ -1,0 +1,4 @@
+CRM_USERNAME=<username e-mail>
+CRM_PASSWORD=<user's password>
+API_KEY=<Default live public key>
+SECRET_KEY=<generated secret key>
