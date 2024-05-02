@@ -399,6 +399,7 @@ if __name__ == '__main__':
     start = datetime.datetime.now()
     contact_list = api.contacts_list()
     pprint.pprint(contact_list)
+
     # contact_subscriptions = api.subscriptions_list(
     #     search_params={
     #         'contact_id': contact_list['content'][0]['id'],
@@ -420,6 +421,5 @@ if __name__ == '__main__':
     #pprint.pprint(services_list)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
-
 
     print(f"Duration: {duration_sec}")
