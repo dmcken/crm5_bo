@@ -175,7 +175,8 @@ class CRM5BackofficeAdmin:
         if section_id is not None:
             product_url = f"{rel_url}/{section_id}"
 
-            section_result = self._make_request('GET', product_url,
+            section_result = self._make_request(
+                'GET', product_url,
                 headers={
                     'authorization': self._access_token,
                     'api_key':       self._secret_key,
@@ -388,15 +389,15 @@ if __name__ == '__main__':
     # api.debug(True)
     api.login(
         # Pull from .env
-        username=os.env['CRM_USERNAME'],
-        password=os.env['CRM_PASSWORD'],
-        api_key=os.env['API_KEY'],
-        secret_key=os.env['SECRET_KEY'],
+        username   = os.environ.get('CRM_USERNAME'),
+        password   = os.environ.get('CRM_PASSWORD'),
+        api_key    = os.environ.get('API_KEY'),
+        secret_key = os.environ.get('SECRET_KEY'),
 
     )
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    contact_list = api.contacts_list(search_params={'code': 38587})
+    contact_list = api.contacts_list()
     pprint.pprint(contact_list)
     # contact_subscriptions = api.subscriptions_list(
     #     search_params={
@@ -415,8 +416,8 @@ if __name__ == '__main__':
     #     # service_id=subscription_devices['content'][0]['enabled_services'][0]['id']
     # )
     # pprint.pprint(device_service)
-    services_list = api.contact_services_list(contact_list['content'][0]['id'])
-    pprint.pprint(services_list)
+    #services_list = api.contact_services_list(contact_list['content'][0]['id'])
+    #pprint.pprint(services_list)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
