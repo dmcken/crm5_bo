@@ -195,6 +195,16 @@ class CRM5BackofficeAdmin:
 
         return section_result
 
+    def activities_list(self, activity_id=None, search_params=None):
+        '''Activities list.
+
+        '''
+        return self._section_list_handler(
+            '/activities',
+            section_id=activity_id,
+            search_params=search_params,
+        )
+
     def contacts_list(self, contact_id=None, search_params=None):
         '''Get list of devices.
         '''
@@ -213,13 +223,13 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
-    def subscriptions_list(self, subscriptions_id=None, search_params=None):
-        '''Subscriptions list.
+    def products_list(self, product_id=None, search_params=None):
+        '''Activities list.
 
         '''
         return self._section_list_handler(
-            '/subscriptions',
-            section_id=subscriptions_id,
+            '/products',
+            section_id=product_id,
             search_params=search_params,
         )
 
@@ -233,26 +243,6 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
-    def activities_list(self, activity_id=None, search_params=None):
-        '''Activities list.
-
-        '''
-        return self._section_list_handler(
-            '/activities',
-            section_id=activity_id,
-            search_params=search_params,
-        )
-
-    def products_list(self, product_id=None, search_params=None):
-        '''Activities list.
-
-        '''
-        return self._section_list_handler(
-            '/products',
-            section_id=product_id,
-            search_params=search_params,
-        )
-
     def service_requests_list(self, service_requests_id=None, search_params=None):
         '''Service Requests list.
 
@@ -260,6 +250,16 @@ class CRM5BackofficeAdmin:
         return self._section_list_handler(
             '/service_requests',
             section_id=service_requests_id,
+            search_params=search_params,
+        )
+
+    def subscriptions_list(self, subscriptions_id=None, search_params=None):
+        '''Subscriptions list.
+
+        '''
+        return self._section_list_handler(
+            '/subscriptions',
+            section_id=subscriptions_id,
             search_params=search_params,
         )
 
