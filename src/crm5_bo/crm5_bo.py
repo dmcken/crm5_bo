@@ -38,7 +38,7 @@ class CRM5BackofficeAdmin:
         self._refresh_token = None
         self._debug_state = False
         self._timeout = 60
-        self._default_page_size = 250
+        self._default_page_size = 100
 
     def debug(self, debug_state: bool=None) -> bool:
         '''Get / Set debug state.
@@ -114,6 +114,7 @@ class CRM5BackofficeAdmin:
         req_data = req.json()
         page_size = int(req_data['paging']['size'])
         total_records = int(req_data['paging']['total'])
+        logger.debug(f"First page data: {req_data['paging']}")
         if page_size >= total_records:
             return req_data
 
@@ -127,7 +128,13 @@ class CRM5BackofficeAdmin:
         for curr_page in range(2, pages + 1):
             logger.debug(f"Fetching page: {curr_page}")
             get_params['page'] = curr_page
-            curr_page_req = self._make_request(method, url, json_data, headers, get_params)
+            curr_page_req = self._make_request(
+                method,
+                url,
+                json_data,
+                headers,
+                get_params
+            )
             curr_page_req_data = curr_page_req.json()
             req_data['content'].extend(curr_page_req_data['content'])
 
@@ -224,7 +231,7 @@ class CRM5BackofficeAdmin:
         )
 
     def orders_list(self, order_id=None, search_params=None):
-        '''Activities list.
+        '''Orders list.
 
         '''
         return self._section_list_handler(
@@ -432,11 +439,10 @@ if __name__ == '__main__':
         password   = os.environ.get('CRM_PASSWORD'),
         api_key    = os.environ.get('API_KEY'),
         secret_key = os.environ.get('SECRET_KEY'),
-
     )
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    contact_list = api.contacts_list()
+    contact_list = api.activities_list()
     pprint.pprint(contact_list)
     pprint.pprint(contact_list.keys())
 
