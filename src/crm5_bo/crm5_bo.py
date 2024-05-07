@@ -233,6 +233,16 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
+    def activities_list(self, activity_id=None, search_params=None):
+        '''Activities list.
+
+        '''
+        return self._section_list_handler(
+            '/services',
+            section_id=activity_id,
+            search_params=search_params,
+        )
+
 
     def products(self, product_id=None, search_params=None):
         '''Get list of products.
@@ -399,6 +409,7 @@ if __name__ == '__main__':
     start = datetime.datetime.now()
     contact_list = api.contacts_list()
     pprint.pprint(contact_list)
+    pprint.pprint(contact_list.keys())
 
     # contact_subscriptions = api.subscriptions_list(
     #     search_params={
