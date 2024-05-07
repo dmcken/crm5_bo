@@ -223,6 +223,16 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
+    def orders_list(self, order_id=None, search_params=None):
+        '''Activities list.
+
+        '''
+        return self._section_list_handler(
+            '/orders',
+            section_id=order_id,
+            search_params=search_params,
+        )
+
     def products_list(self, product_id=None, search_params=None):
         '''Activities list.
 
