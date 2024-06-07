@@ -223,6 +223,8 @@ class CRM5BackofficeAdmin:
 
     def devices_list(self, devices_id=None, search_params=None):
         '''Get list of devices.
+
+        https://speca.io/CRM/backoffice-admin#list_devices
         '''
         return self._section_list_handler(
             '/devices',
