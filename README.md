@@ -9,6 +9,8 @@ CRM 5 BackOffice Admin API
 Install from github latest version:
 ```
 pip install git+https://github.com/dmcken/crm5_bo.git
+or
+python3 -m pip install git+https://github.com/dmcken/crm5_bo.git
 ```
 
 Local copy for future developement:
