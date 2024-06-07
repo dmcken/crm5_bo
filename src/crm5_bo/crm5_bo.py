@@ -366,7 +366,14 @@ class CRM5BackofficeAdmin:
 
         Getting unauthorized.
         '''
-        result = self._make_request("GET", f'/contacts/{contact_id}/services')
+        result = self._make_request(
+            "GET",
+            f'/contacts/{contact_id}/services',
+            headers={
+                'authorization': self._access_token,
+                'api_key': self._secret_key,
+            },
+        )
 
         data = result.json()
 
@@ -444,9 +451,9 @@ if __name__ == '__main__':
     )
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    contact_list = api.activities_list()
+    contact_list = api.contacts_list(search_params={'code': 7038476})
     pprint.pprint(contact_list)
-    pprint.pprint(contact_list.keys())
+    pprint.pprint(contact_list['content'][0]['id'])
 
     # contact_subscriptions = api.subscriptions_list(
     #     search_params={
@@ -465,8 +472,8 @@ if __name__ == '__main__':
     #     # service_id=subscription_devices['content'][0]['enabled_services'][0]['id']
     # )
     # pprint.pprint(device_service)
-    #services_list = api.contact_services_list(contact_list['content'][0]['id'])
-    #pprint.pprint(services_list)
+    services_list = api.contact_services_list(contact_list['content'][0]['id'])
+    pprint.pprint(services_list)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
