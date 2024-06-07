@@ -377,7 +377,7 @@ class CRM5BackofficeAdmin:
 
         data = result.json()
 
-        return data['content']
+        return data
 
     def subscriptions_devices_list(self, subscription_id):
         '''Fetch subscription devices list.
