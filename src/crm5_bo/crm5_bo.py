@@ -221,14 +221,23 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
-    def devices_list(self, devices_id=None, search_params=None):
+    def devices_list(self, search_params=None):
         '''Get list of devices.
 
         https://speca.io/CRM/backoffice-admin#list_devices
         '''
         return self._section_list_handler(
             '/devices',
-            section_id=devices_id,
+            search_params=search_params,
+        )
+
+    def journals_list(self, service_id=None, search_params=None):
+        '''Services list.
+
+        '''
+        return self._section_list_handler(
+            '/journals',
+            section_id=service_id,
             search_params=search_params,
         )
 
@@ -451,9 +460,11 @@ if __name__ == '__main__':
     )
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    contact_list = api.contacts_list(search_params={'code': 7038476})
-    pprint.pprint(contact_list)
-    pprint.pprint(contact_list['content'][0]['id'])
+    jour = api.journals_list()
+    # contact_list = api.contacts_list(search_params={'code': 7038476})
+    # pprint.pprint(contact_list)
+    # pprint.pprint(contact_list['content'][0]['id'])
+
 
     # contact_subscriptions = api.subscriptions_list(
     #     search_params={
@@ -472,8 +483,8 @@ if __name__ == '__main__':
     #     # service_id=subscription_devices['content'][0]['enabled_services'][0]['id']
     # )
     # pprint.pprint(device_service)
-    services_list = api.contact_services_list(contact_list['content'][0]['id'])
-    pprint.pprint(services_list)
+    # services_list = api.contact_services_list(contact_list['content'][0]['id'])
+    # pprint.pprint(services_list)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
