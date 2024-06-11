@@ -100,7 +100,23 @@ class CRM5BackofficeAdmin:
 
         return req
 
-    def _fetch_all(self, method, url, json_data=None, headers=None, get_params=None):
+    def _fetch_page(self, method: str, url: str, json_data=None, headers=None,
+                    get_params=None, page_num: int=None):
+        '''Fetch a single page of a query.
+        '''
+        if get_params is None:
+            get_params = {}
+        if 'size' not in get_params:
+            get_params['size'] = self._default_page_size
+        if page_num is not None:
+            get_params['page'] = page_num
+
+        req = self._make_request(method, url, json_data, headers, get_params)
+
+        req_data = req.json()
+        return req_data
+
+    def _fetch_all(self, method: str, url: str, json_data=None, headers=None, get_params=None):
         '''Make iterative requests to fetch the complete result set.
         '''
 
@@ -109,11 +125,17 @@ class CRM5BackofficeAdmin:
         if 'size' not in get_params:
             get_params['size'] = self._default_page_size
 
-        req = self._make_request(method, url, json_data, headers, get_params)
+        req_data = self._fetch_page(
+            method=method,
+            url=url,
+            json_data=json_data,
+            headers=headers,
+            get_params=get_params,
+        )
 
-        req_data = req.json()
         page_size = int(req_data['paging']['size'])
         total_records = int(req_data['paging']['total'])
+
         logger.debug(f"First page data: {req_data['paging']}")
         if page_size >= total_records:
             return req_data
@@ -125,20 +147,25 @@ class CRM5BackofficeAdmin:
         if 'size' not in get_params or get_params['size'] != page_size:
             get_params['size'] = page_size
 
-        for curr_page in range(2, pages + 1):
+        curr_page = 2
+        while True:
             logger.debug(f"Fetching page: {curr_page}")
-            get_params['page'] = curr_page
-            curr_page_req = self._make_request(
-                method,
-                url,
-                json_data,
-                headers,
-                get_params
+            curr_page_req_data = self._fetch_page(
+                method=method,
+                url=url,
+                json_data=json_data,
+                headers=headers,
+                get_params=get_params,
+                page_num=curr_page,
             )
-            curr_page_req_data = curr_page_req.json()
+            logger.debug(f"Page {curr_page} - paging {curr_page_req_data['paging']}")
             req_data['content'].extend(curr_page_req_data['content'])
+            if curr_page_req_data['paging']['size'] != page_size:
+                break
 
-        req_data['paging']['page'] = -1
+            curr_page += 1
+
+        req_data['paging']['pages'] = curr_page
 
         return req_data
 
@@ -460,7 +487,9 @@ if __name__ == '__main__':
     )
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    jour = api.journals_list()
+    activities = api.journals_list()
+    logger.debug(f"Count: {len(activities['content'])}")
+    logger.debug(f"Paging: {activities['paging']}")
     # contact_list = api.contacts_list(search_params={'code': 7038476})
     # pprint.pprint(contact_list)
     # pprint.pprint(contact_list['content'][0]['id'])
