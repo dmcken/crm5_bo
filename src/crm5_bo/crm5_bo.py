@@ -318,6 +318,16 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
+    def users_list(self, user_id=None, search_params=None):
+        '''Users list.
+
+        '''
+        return self._section_list_handler(
+            '/users',
+            section_id=user_id,
+            search_params=search_params,
+        )
+
     def products(self, product_id=None, search_params=None):
         '''Get list of products.
 
