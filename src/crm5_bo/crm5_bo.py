@@ -308,6 +308,13 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
+    def service_device_list(self, service_id: str):
+        '''Fetch service device list.
+        '''
+        return self._section_list_handler(
+            f'/services/{service_id}/devices',
+        )
+
     def subscriptions_list(self, subscriptions_id=None, search_params=None):
         '''Subscriptions list.
 
@@ -497,7 +504,7 @@ if __name__ == '__main__':
     )
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    activities = api.products_list()
+    activities = api.service_device_list('FF9874ECEBDC42CB8AECBC77DD8AAE61')
     logger.debug(f"Count: {len(activities['content'])}")
     logger.debug(f"Paging: {activities['paging']}")
     logger.debug(f"Result: {pprint.pformat(activities)}")
