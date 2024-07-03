@@ -279,7 +279,7 @@ class CRM5BackofficeAdmin:
         )
 
     def products_list(self, product_id=None, search_params=None):
-        '''Activities list.
+        '''Fetch Product list.
 
         '''
         return self._section_list_handler(
@@ -414,7 +414,7 @@ class CRM5BackofficeAdmin:
         '''
         result = self._make_request(
             "GET",
-            f'/contacts/{contact_id}/services',
+            f'/contacts/{contact_id}/services?include_subscription=true',
             headers={
                 'authorization': self._access_token,
                 'api_key': self._secret_key,
@@ -497,9 +497,10 @@ if __name__ == '__main__':
     )
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    activities = api.journals_list()
+    activities = api.products_list()
     logger.debug(f"Count: {len(activities['content'])}")
     logger.debug(f"Paging: {activities['paging']}")
+    logger.debug(f"Result: {pprint.pformat(activities)}")
     # contact_list = api.contacts_list(search_params={'code': 7038476})
     # pprint.pprint(contact_list)
     # pprint.pprint(contact_list['content'][0]['id'])
