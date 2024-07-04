@@ -37,6 +37,36 @@ class CRM5BackofficeAdmin:
         self._timeout = 60
         self._default_page_size = 100
 
+    def fields_to_dict(self, custom_fields:list[dict[str,str]]):
+        '''Fields to dictionary.
+
+        Custom fields from CRM come in the form:
+        'custom_fields': [
+            {'key': 'overdue_invoice_amount', 'value': '<value>'},
+            {'key': 'custom_emails',          'value': '<value> '},
+            {'key': 'email_notes',            'value': '<value>'},
+            {'key': 'credit_limit_v4',        'value': '5232130.0'},
+            {'key': 'phone_notes',            'value': 'Main'},
+            {'key': 'number_of_days_passed',  'value': '5'},
+            {'key': 'custom_phones',          'value': 'CUSTOM3-kjfshkjhashdsa'},
+            {'key': 'account_number',         'value': '982743749382739'}
+        ],
+        which can be a pain to work with.
+
+        This function turns that form into a single dictionary of the form:
+        'custom_fields_dict': {
+            'overdue_invoice_amount': '<value>',
+            'custom_emails': '<value> ',
+            'email_notes': '<value>',
+            'credit_limit_v4': '5232130.0',
+            'phone_notes': 'Main',
+            'number_of_days_passed': '5',
+            'custom_phones': 'CUSTOM3-kjfshkjhashdsa',
+            'account_number': '982743749382739'
+        }
+        '''
+        return {v['key']:v['value'] for v in custom_fields}
+
     def debug(self, debug_state: bool=None) -> bool:
         '''Get / Set debug state.
 
@@ -515,7 +545,12 @@ if __name__ == '__main__':
     api.debug(True)
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    activities = api.contacts_list(search_params={'code':'7043424'})
+    activities = api.contacts_list(search_params={
+        'code':'7043624',
+        'include_custom_fields': 'true', 
+        'include_metrics':'true',
+        'include_tags': 'true',
+    },)
     logger.debug(f"Count: {len(activities['content'])}")
     logger.debug(f"Paging: {activities['paging']}")
     logger.debug(f"Result: {pprint.pformat(activities)}")
