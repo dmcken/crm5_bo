@@ -1,8 +1,5 @@
 '''CRM 5 Backoffice APIs.
 
-This is the REST API documented at:
-https://speca.io/CRM/backoffice-admin#introduction
-
 '''
 
 # System imports
@@ -21,10 +18,10 @@ logger = logging.getLogger(__name__)
 class CRM5BackofficeAdmin:
     '''CRM.com BackOffice Admin API.
 
-    API Docs:
-    https://speca.io/CRM/backoffice-admin
+    API Docs (current version v2):
+    https://crmcom.stoplight.io/docs/stoplight-api-doc/
     '''
-    _backoffice_url = '/backoffice/v1'
+    _backoffice_url = '/backoffice/v2'
 
 
     def __init__(self, crm_domain) -> None:
@@ -73,6 +70,7 @@ class CRM5BackofficeAdmin:
 
     def _make_request(self, method, url, json_data=None, headers=None, get_params=None):
         '''Make a request to the CRM api.
+
         '''
 
         req_params = {}
@@ -111,9 +109,18 @@ class CRM5BackofficeAdmin:
         if page_num is not None:
             get_params['page'] = page_num
 
-        req = self._make_request(method, url, json_data, headers, get_params)
+        req = self._make_request(
+            method,
+            url,
+            json_data,
+            headers,
+            get_params,
+        )
 
         req_data = req.json()
+        # Seems total isn't set under all cirmstances.
+        if req_data['paging']['total'] is None:
+            req_data['paging']['total'] = req_data['paging']['size']
         return req_data
 
     def _fetch_all(self, method: str, url: str, json_data=None, headers=None, get_params=None):
@@ -181,8 +188,11 @@ class CRM5BackofficeAdmin:
         self._api_key = api_key
         self._secret_key = secret_key
 
-        req = self._make_request('POST', '/users/authenticate',
+        req = self._make_request(
+            'POST',
+            '/users/authenticate',
             json_data={
+                'provider': "EMAIL",
                 'username': self._username,
                 'password': self._password,
             },
@@ -370,7 +380,7 @@ class CRM5BackofficeAdmin:
         return product_data
 
     def contacts(self, contact_id=None, search_params=None):
-        '''Get list of products.
+        '''Get list of contacts.
 
         product_data = api.products()
 
@@ -502,12 +512,14 @@ if __name__ == '__main__':
         api_key    = os.environ.get('API_KEY'),
         secret_key = os.environ.get('SECRET_KEY'),
     )
+    api.debug(True)
     # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    activities = api.service_device_list('FF9874ECEBDC42CB8AECBC77DD8AAE61')
+    activities = api.contacts_list(search_params={'code':'7043424'})
     logger.debug(f"Count: {len(activities['content'])}")
     logger.debug(f"Paging: {activities['paging']}")
     logger.debug(f"Result: {pprint.pformat(activities)}")
+    contact = activities['content'][0]
     # contact_list = api.contacts_list(search_params={'code': 7038476})
     # pprint.pprint(contact_list)
     # pprint.pprint(contact_list['content'][0]['id'])
