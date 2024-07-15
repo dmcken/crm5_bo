@@ -156,7 +156,7 @@ class CRM5BackofficeAdmin:
     def _fetch_all(self, method: str, url: str, json_data=None, headers=None, get_params=None):
         '''Make iterative requests to fetch the complete result set.
         '''
-
+        logger.debug(f"Fetch all {method} -> {url}")
         if get_params is None:
             get_params = {}
         if 'size' not in get_params:
@@ -174,12 +174,8 @@ class CRM5BackofficeAdmin:
         total_records = int(req_data['paging']['total'])
 
         logger.debug(f"First page data: {req_data['paging']}")
-        if page_size >= total_records:
+        if req_data['paging']['has_more'] is False:
             return req_data
-
-        pages = math.ceil(total_records / page_size)
-        if get_params is None:
-            get_params = {}
 
         if 'size' not in get_params or get_params['size'] != page_size:
             get_params['size'] = page_size
@@ -197,12 +193,14 @@ class CRM5BackofficeAdmin:
             )
             logger.debug(f"Page {curr_page} - paging {curr_page_req_data['paging']}")
             req_data['content'].extend(curr_page_req_data['content'])
-            if curr_page_req_data['paging']['size'] != page_size:
+            if curr_page_req_data['paging']['has_more'] is False:
+                req_data['paging']['has_more'] = curr_page_req_data['paging']['has_more']
                 break
 
             curr_page += 1
 
         req_data['paging']['pages'] = curr_page
+        req_data['paging']['total'] = len(req_data['content'])
 
         return req_data
 
@@ -490,7 +488,8 @@ class CRM5BackofficeAdmin:
 
         '''
         # ?size=100&include_subscription=true
-        req = self._make_request('GET', f"/contacts/{contact_id}/services",
+        req = self._make_request('GET', f"/contacts/{contact_id}/services?" + \
+            "include_order_info=true&include_subscription=true&include_total=true",
             headers={
                 'authorization': self._access_token,
                 'api_key': self._secret_key,
@@ -520,7 +519,6 @@ class CRM5BackofficeAdmin:
         return subscription_data
 
 
-
 if __name__ == '__main__':
     import datetime
     import os
@@ -543,42 +541,16 @@ if __name__ == '__main__':
         secret_key = os.environ.get('SECRET_KEY'),
     )
     api.debug(True)
-    # product_result = api.products(search_params={'search_value': 'VILO'})
     start = datetime.datetime.now()
-    activities = api.contacts_list(search_params={
-        'code':'7043624',
-        'include_custom_fields': 'true', 
-        'include_metrics':'true',
-        'include_tags': 'true',
-    },)
-    logger.debug(f"Count: {len(activities['content'])}")
-    logger.debug(f"Paging: {activities['paging']}")
-    logger.debug(f"Result: {pprint.pformat(activities)}")
-    contact = activities['content'][0]
-    # contact_list = api.contacts_list(search_params={'code': 7038476})
-    # pprint.pprint(contact_list)
-    # pprint.pprint(contact_list['content'][0]['id'])
+
+    product = api.products_list()
+    products_map = {v['sku']:v for v in product['content']}
+
+    pprint.pprint(list(products_map.keys()))
+    print(f"Length: {len(product['content'])}")
+    pprint.pprint(product['paging'])
 
 
-    # contact_subscriptions = api.subscriptions_list(
-    #     search_params={
-    #         'contact_id': contact_list['content'][0]['id'],
-    #         'include_billing_info': 'true',
-    #     },
-    # )
-    # pprint.pprint(contact_subscriptions)
-    # subscription_devices = api.devices_list(search_params={
-    #     'contact_id': contact_list['content'][0]['id'],
-    #     'subscription_ids': contact_subscriptions['content'][0]['id'],
-    #     'include_subscription': 'true',
-    # })
-    # pprint.pprint(subscription_devices, width=200)
-    # device_service = api.services_list(
-    #     # service_id=subscription_devices['content'][0]['enabled_services'][0]['id']
-    # )
-    # pprint.pprint(device_service)
-    # services_list = api.contact_services_list(contact_list['content'][0]['id'])
-    # pprint.pprint(services_list)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
