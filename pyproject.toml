@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "crm5_bo"
-version = "0.0.8"
+dynamic = ["version"]
 authors = [
   { name="David Mc Ken", email="david.mcken@codepro.guru" },
 ]
@@ -21,6 +21,9 @@ dependencies = [
   "python-dotenv",
   "requests",
 ]
+
+[tool.hatch.version]
+path = "src/crm5_bo/__init__.py"
 
 [project.urls]
 Homepage = "https://github.com/dmcken/crm5_bo"
