@@ -24,8 +24,12 @@ class CRM5BackofficeAdmin:
     _backoffice_url = '/backoffice/v2'
 
 
-    def __init__(self, crm_domain) -> None:
-        '''Constructor'''
+    def __init__(self, crm_domain: str) -> None:
+        """Constructor.
+
+        Args:
+            crm_domain (str): _description_
+        """
         self._crm_domain = crm_domain
         self._username = None
         self._password = None
@@ -68,11 +72,17 @@ class CRM5BackofficeAdmin:
         return {v['key']:v['value'] for v in custom_fields}
 
     def debug(self, debug_state: bool=None) -> bool:
-        '''Get / Set debug state.
+        """Get / Set debug state.
 
         if a debug_state is passed then set the debug state and logging
         parameters. If None is set then simply return the value.
-        '''
+
+        Args:
+            debug_state (bool, optional): _description_. Defaults to None.
+
+        Returns:
+            bool: _description_
+        """
         if debug_state is None:
             return self._debug_state
 
@@ -90,19 +100,34 @@ class CRM5BackofficeAdmin:
         return self._debug_state
 
     def _buid_url(self, relative_url: str) -> str:
-        '''Build the full URL for making a request.
+        """Build the full URL for making a request.
 
-        Builds the full url.
-        '''
+        Args:
+            relative_url (str): _description_
+
+        Returns:
+            str: _description_
+        """
         base_url = f"{self._backoffice_url}{relative_url}"
 
         return urllib.parse.urljoin(f"https://{self._crm_domain}", base_url)
 
-    def _make_request(self, method, url, json_data=None, headers=None, get_params=None):
-        '''Make a request to the CRM api.
+    def _make_request(self, method, url, json_data=None, headers=None, get_params=None) -> dict:
+        """Make a request to the CRM api.
 
-        '''
+        Args:
+            method (_type_): _description_
+            url (_type_): _description_
+            json_data (_type_, optional): _description_. Defaults to None.
+            headers (_type_, optional): _description_. Defaults to None.
+            get_params (_type_, optional): _description_. Defaults to None.
 
+        Raises:
+            RuntimeError: _description_
+
+        Returns:
+            dict: _description_
+        """
         req_params = {}
 
         if get_params is not None:
@@ -130,8 +155,19 @@ class CRM5BackofficeAdmin:
 
     def _fetch_page(self, method: str, url: str, json_data=None, headers=None,
                     get_params=None, page_num: int=None):
-        '''Fetch a single page of a query.
-        '''
+        """Fetch a single page of a query.
+
+        Args:
+            method (str): _description_
+            url (str): _description_
+            json_data (_type_, optional): _description_. Defaults to None.
+            headers (_type_, optional): _description_. Defaults to None.
+            get_params (_type_, optional): _description_. Defaults to None.
+            page_num (int, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         if get_params is None:
             get_params = {}
         if 'size' not in get_params:
@@ -153,9 +189,19 @@ class CRM5BackofficeAdmin:
             req_data['paging']['total'] = req_data['paging']['size']
         return req_data
 
-    def _fetch_all(self, method: str, url: str, json_data=None, headers=None, get_params=None):
-        '''Make iterative requests to fetch the complete result set.
-        '''
+    def _fetch_all(self, method: str, url: str, json_data=None, headers=None, get_params=None) -> dict:
+        """Make iterative requests to fetch the complete result set.
+
+        Args:
+            method (str): _description_
+            url (str): _description_
+            json_data (_type_, optional): _description_. Defaults to None.
+            headers (_type_, optional): _description_. Defaults to None.
+            get_params (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            dict: _description_
+        """
         logger.debug(f"Fetch all {method} -> {url}")
         if get_params is None:
             get_params = {}
@@ -205,12 +251,20 @@ class CRM5BackofficeAdmin:
         return req_data
 
     def login(self, username: str, password: str, api_key: str, secret_key: str) -> bool:
-        '''Authenticate user.
+        """Authenticate user.
 
         Docs:
         https://speca.io/CRM/backoffice-admin#adminusers-authenticate
 
-        '''
+        Args:
+            username (str): _description_
+            password (str): _description_
+            api_key (str): _description_
+            secret_key (str): _description_
+
+        Returns:
+            bool: _description_
+        """        
         self._username = username
         self._password = password
         self._api_key = api_key
@@ -235,13 +289,25 @@ class CRM5BackofficeAdmin:
 
         return
 
-    def logout(self,) -> None:
-        '''Logout from API and invalidate tokens.
-        '''
+    def logout(self) -> None:
+        """Logout of API.
+
+        Logout from API and invalidate tokens.
+
+        """ 
         return
 
     def _section_list_handler(self, rel_url, section_id=None, search_params=None):
-        '''
+        """_summary_
+
+        Args:
+            rel_url (_type_): _description_
+            section_id (_type_, optional): _description_. Defaults to None.
+            search_params (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """        '''
         '''
 
         if section_id is not None:
@@ -354,9 +420,15 @@ class CRM5BackofficeAdmin:
         )
 
     def subscriptions_list(self, subscriptions_id=None, search_params=None):
-        '''Subscriptions list.
+        """Fetch subscriptions list.
 
-        '''
+        Args:
+            subscriptions_id (_type_, optional): _description_. Defaults to None.
+            search_params (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """        
         return self._section_list_handler(
             '/subscriptions',
             section_id=subscriptions_id,
