@@ -15,6 +15,19 @@ import requests
 http_logger = logging.getLogger('httplogger')
 logger = logging.getLogger(__name__)
 
+class CRM5APIError(RuntimeError):
+    """CRM 5 API Errors.
+
+    Args:
+        RuntimeError (_type_): _description_
+
+    Raises:
+        RuntimeError: _description_
+
+    Returns:
+        _type_: _description_
+    """    
+
 class CRM5BackofficeAdmin:
     '''CRM.com BackOffice Admin API.
 
@@ -149,7 +162,7 @@ class CRM5BackofficeAdmin:
             if self._debug_state:
                 logger.error(f"Recv error code: {req.status_code}")
                 logger.error(f"Body: {req.text}")
-            raise RuntimeError(f"HTTP Error '{req.status_code}' -> {req.text}")
+            raise CRM5APIError(f"HTTP Error '{req.status_code}' -> {req.text}")
 
         return req
 
@@ -571,6 +584,28 @@ class CRM5BackofficeAdmin:
 
         return product_data
 
+    def list_service_devices(self, service_id: str) -> dict:
+        """List Service Devices
+
+        Docs:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/0745b67da81df-list-service-devices
+
+        Args:
+            service_id (str): _description_
+
+        Returns:
+            dict: _description_
+        """
+        req = self._make_request('GET', f"/services/{service_id}/devices",
+            headers={
+                'authorization': self._access_token,
+                'api_key': self._secret_key,
+            },
+        )
+        device_data = req.json()
+
+        return device_data     
+
     def subscription(self, subscription_id: str = None):
         '''Subscriptions.
         '''
@@ -615,12 +650,10 @@ if __name__ == '__main__':
     api.debug(True)
     start = datetime.datetime.now()
 
-    product = api.products_list()
-    products_map = {v['sku']:v for v in product['content']}
+    devices = api.contacts_list(search_params={'code': '1285126342605868', 'include_custom_fields': 'true'})
 
-    pprint.pprint(list(products_map.keys()))
-    print(f"Length: {len(product['content'])}")
-    pprint.pprint(product['paging'])
+    pprint.pprint(devices['content'])
+    pprint.pprint(len(devices['content']))
 
 
     end = datetime.datetime.now()
