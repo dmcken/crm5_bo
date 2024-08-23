@@ -1,4 +1,4 @@
 
 
 __version__ = "0.0.9"
-from .crm5_bo import CRM5BackofficeAdmin
+from .crm5_bo import CRM5BackofficeAdmin, CRM5APIError
