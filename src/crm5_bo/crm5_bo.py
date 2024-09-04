@@ -270,13 +270,13 @@ class CRM5BackofficeAdmin:
         https://speca.io/CRM/backoffice-admin#adminusers-authenticate
 
         Args:
-            username (str): _description_
-            password (str): _description_
-            api_key (str): _description_
-            secret_key (str): _description_
+            username (str): CRM username.
+            password (str): CRM password.
+            api_key (str):  CRM API key.
+            secret_key (str): CRM secret key.
 
         Returns:
-            bool: _description_
+            bool: True if login was successful, False if not.
         """        
         self._username = username
         self._password = password
@@ -299,16 +299,55 @@ class CRM5BackofficeAdmin:
 
         self._access_token = auth_data['access_token']
         self._refresh_token = auth_data['refresh_token']
+        self._expiration_date = auth_data['expiration_date']
+        self._organization_mod = auth_data['mode']
+        self._lockout_date = auth_data['lockout_date']
+        self._password_expired = auth_data['password_expired']
 
         return
 
     def logout(self) -> None:
         """Logout of API.
 
-        Logout from API and invalidate tokens.
+        Logout from API and invalidate access and refresh tokens.
 
         """ 
         return
+
+    def dump_auth(self,) -> dict:
+        """Dump the authentication data for cache.
+
+        Returns:
+            dict: _description_
+        """        
+        return {
+            'username': self._username,
+            'password': self._password,
+            'api_key': self._api_key,
+            'secret_key': self._secret_key,
+            'access_token': self._access_token,
+            'refresh_token': self._refresh_token,
+            'expiration_date': self._expiration_date,
+            'lockout_date': self._lockout_date,
+            'password_expired': self._password_expired,
+        }
+
+    def load_auth(self, auth_data: dict) -> None:
+        """Load the authentication data from cache.
+
+        Args:
+            auth_data (dict): _description_
+        """
+        self._username         = auth_data['username']
+        self._password         = auth_data['password']
+        self._api_key          = auth_data['api_key']
+        self._secret_key       = auth_data['secret_key']
+        self._access_token     = auth_data['access_token']
+        self._refresh_token    = auth_data['refresh_token']
+        self._expiration_date  = auth_data['expiration_date']
+        self._lockout_date     = auth_data['lockout_date']
+        self._password_expired = auth_data['password_expired']
+            
 
     def _section_list_handler(self, rel_url, section_id=None, search_params=None):
         """_summary_
@@ -628,6 +667,7 @@ class CRM5BackofficeAdmin:
 
 if __name__ == '__main__':
     import datetime
+    import json
     import os
     import pprint
 
@@ -636,18 +676,34 @@ if __name__ == '__main__':
 
 
     dotenv.load_dotenv()
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        level=logging.DEBUG,
+    )
 
     api = CRM5BackofficeAdmin('app.crm.com')
-    # api.debug(True)
-    api.login(
-        # Pull from .env
-        username   = os.environ.get('CRM_USERNAME'),
-        password   = os.environ.get('CRM_PASSWORD'),
-        api_key    = os.environ.get('API_KEY'),
-        secret_key = os.environ.get('SECRET_KEY'),
-    )
     api.debug(True)
+    try:
+        with open('auth.json', 'r', encoding='utf-8') as f:
+            auth_data = json.loads(f.read())
+        one_hr_future = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
+        logging.info(f"Exp: {auth_data['expiration_date']} -> {one_hr_future}")
+        if int(auth_data['expiration_date']) <= one_hr_future:
+            # If the expiration date is down to an hour.
+            raise FileNotFoundError
+        api.load_auth(auth_data=auth_data)
+    except FileNotFoundError:
+        logging.info("Creating new token")
+        api.login(
+            # Pull from .env
+            username   = os.environ.get('CRM_USERNAME'),
+            password   = os.environ.get('CRM_PASSWORD'),
+            api_key    = os.environ.get('API_KEY'),
+            secret_key = os.environ.get('SECRET_KEY'),
+        )
+        # Save the token
+        with open('auth.json', 'w', encoding='utf-8') as f:
+            f.write(json.dumps(api.dump_auth()))
     start = datetime.datetime.now()
 
     devices = api.contacts_list(search_params={'code': '1285126342605868', 'include_custom_fields': 'true'})
