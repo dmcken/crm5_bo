@@ -43,16 +43,20 @@ class CRM5BackofficeAdmin:
         Args:
             crm_domain (str): _description_
         """
-        self._crm_domain = crm_domain
-        self._username = None
-        self._password = None
-        self._api_key = None
-        self._secret_key = None
-        self._access_token = None
-        self._refresh_token = None
-        self._debug_state = False
-        self._timeout = 60
+        self._crm_domain        = crm_domain
+        self._username          = None
+        self._password          = None
+        self._api_key           = None
+        self._secret_key        = None
+        self._access_token      = None
+        self._refresh_token     = None
+        self._debug_state       = False
+        self._timeout           = 60
         self._default_page_size = 100
+        self._expiration_date   = None
+        self._organization_mod  = None
+        self._lockout_date      = None
+        self._password_expired  = None
 
     def fields_to_dict(self, custom_fields:list[dict[str,str]]):
         '''Fields to dictionary.
