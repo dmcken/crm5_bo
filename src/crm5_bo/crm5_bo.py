@@ -26,7 +26,7 @@ class CRM5APIError(RuntimeError):
 
     Returns:
         _type_: _description_
-    """    
+    """
 
 class CRM5BackofficeAdmin:
     '''CRM.com BackOffice Admin API.
@@ -197,6 +197,10 @@ class CRM5BackofficeAdmin:
         )
 
         req_data = req.json()
+
+        if req_data['content'] is None:
+            raise CRM5APIError("Call returned no content, call not implemented")
+
         # Seems total isn't set under all cirmstances.
         if req_data['paging']['total'] is None:
             req_data['paging']['total'] = req_data['paging']['size']
@@ -277,7 +281,7 @@ class CRM5BackofficeAdmin:
 
         Returns:
             bool: True if login was successful, False if not.
-        """        
+        """
         self._username = username
         self._password = password
         self._api_key = api_key
@@ -311,7 +315,7 @@ class CRM5BackofficeAdmin:
 
         Logout from API and invalidate access and refresh tokens.
 
-        """ 
+        """
         return
 
     def dump_auth(self,) -> dict:
@@ -319,7 +323,7 @@ class CRM5BackofficeAdmin:
 
         Returns:
             dict: _description_
-        """        
+        """
         return {
             'username': self._username,
             'password': self._password,
@@ -347,7 +351,7 @@ class CRM5BackofficeAdmin:
         self._expiration_date  = auth_data['expiration_date']
         self._lockout_date     = auth_data['lockout_date']
         self._password_expired = auth_data['password_expired']
-            
+
 
     def _section_list_handler(self, rel_url, section_id=None, search_params=None):
         """_summary_
@@ -404,6 +408,21 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
+    def custom_fields(self, custom_field_id=None):
+        """Get either all custom fields or a specific one.
+
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/9ae36ade79cf3-list-custom-fields
+
+        Args:
+            id (_type_, optional): _description_. Defaults to None.
+        """
+        if custom_field_id is not None:
+            path = f'/custom_fields/{custom_field_id}'
+        else:
+            path = '/custom_fields'
+        return self._section_list_handler(path)
+
+
     def devices_list(self, search_params=None):
         '''Get list of devices.
 
@@ -444,8 +463,11 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
+    @DeprecationWarning
     def services_list(self, service_id=None, search_params=None):
         '''Services list.
+
+        REST endpoint no longer exists in v2 API.
 
         '''
         return self._section_list_handler(
@@ -480,7 +502,7 @@ class CRM5BackofficeAdmin:
 
         Returns:
             _type_: _description_
-        """        
+        """
         return self._section_list_handler(
             '/subscriptions',
             section_id=subscriptions_id,
@@ -643,7 +665,7 @@ class CRM5BackofficeAdmin:
         )
         device_data = req.json()
 
-        return device_data     
+        return device_data
 
     def subscription(self, subscription_id: str = None):
         '''Subscriptions.
@@ -706,12 +728,9 @@ if __name__ == '__main__':
             f.write(json.dumps(api.dump_auth()))
     start = datetime.datetime.now()
 
-    devices = api.contacts_list(search_params={'code': '1285126342605868', 'include_custom_fields': 'true'})
+    devices = api.custom_fields()
 
-    pprint.pprint(devices['content'])
-    pprint.pprint(len(devices['content']))
-
-
+    pprint.pprint(devices)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
