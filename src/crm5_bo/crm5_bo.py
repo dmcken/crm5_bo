@@ -133,11 +133,11 @@ class CRM5BackofficeAdmin:
         """Make a request to the CRM api.
 
         Args:
-            method (_type_): _description_
-            url (_type_): _description_
-            json_data (_type_, optional): _description_. Defaults to None.
-            headers (_type_, optional): _description_. Defaults to None.
-            get_params (_type_, optional): _description_. Defaults to None.
+            method (_type_): HTTP method to use.
+            url (_type_): URL to request.
+            json_data (_type_, optional): JSON data to post. Defaults to None.
+            headers (_type_, optional): Headers to use for request. Defaults to None.
+            get_params (_type_, optional): If this is a HTTP GET the URL query parameters. Defaults to None.
 
         Raises:
             RuntimeError: _description_
@@ -513,6 +513,16 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
+    def teams_list(self, user_id=None, search_params=None):
+        '''Users list.
+
+        '''
+        return self._section_list_handler(
+            '/teams',
+            section_id=user_id,
+            search_params=search_params,
+        )
+
     def users_list(self, user_id=None, search_params=None):
         '''Users list.
 
@@ -732,9 +742,9 @@ if __name__ == '__main__':
             f.write(json.dumps(api.dump_auth()))
     start = datetime.datetime.now()
 
-    devices = api.custom_fields()
+    devices = api.users_list()
 
-    pprint.pprint(devices)
+    pprint.pprint(devices['content'])
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
