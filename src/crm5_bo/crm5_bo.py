@@ -422,8 +422,12 @@ class CRM5BackofficeAdmin:
 
         req = self._make_request(
             'PUT',
-            self._buid_url(f'/activities/{activity_id}'),
+            f'/activities/{activity_id}',
             json_data=activity_update,
+            headers={
+                'authorization': self._access_token,
+                'api_key':       self._secret_key,
+            },
         )
 
         req_data = req.json()
@@ -774,13 +778,22 @@ if __name__ == '__main__':
 
     devices = api.activities_list(
         search_params={
-            'custom_fields': 'activity_number;A004920',
+            'custom_fields': 'activity_number;A005090',
             'include_custom_fields': True,
         }
     )
 
     print("Result")
     pprint.pprint(devices)
+
+    api.activity_update(
+        devices['content'][0]['id'],
+        {
+            'custom_fields': [
+                {'key': 'status','value': 'Scheduled'}
+            ]
+        }
+    )
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
