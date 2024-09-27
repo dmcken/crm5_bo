@@ -789,8 +789,10 @@ if __name__ == '__main__':
     api.activity_update(
         devices['content'][0]['id'],
         {
+            # This overwrites all custom fields.
             'custom_fields': [
                 {'key': 'status','value': 'Scheduled'}
+
             ]
         }
     )
