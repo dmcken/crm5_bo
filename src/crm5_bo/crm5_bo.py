@@ -129,7 +129,8 @@ class CRM5BackofficeAdmin:
 
         return urllib.parse.urljoin(f"https://{self._crm_domain}", base_url)
 
-    def _make_request(self, method, url, json_data=None, headers=None, get_params=None) -> dict:
+    def _make_request(self, method, url, json_data=None, headers=None,
+                      get_params=None) -> dict:
         """Make a request to the CRM api.
 
         Args:
@@ -358,7 +359,11 @@ class CRM5BackofficeAdmin:
 
 
     def _section_list_handler(self, rel_url, section_id=None, search_params=None):
-        """_summary_
+        """A generic section handler.
+
+        This can be used to fetch a single entity specified by the section_id.
+        this will be the unique UUID used by CRM.
+
 
         Args:
             rel_url (_type_): _description_
@@ -367,23 +372,24 @@ class CRM5BackofficeAdmin:
 
         Returns:
             _type_: _description_
-        """        '''
-        '''
-
+        """
         if section_id is not None:
-            product_url = f"{rel_url}/{section_id}"
+            target_url = f"{rel_url}/{section_id}"
 
-            section_result = self._make_request(
-                'GET', product_url,
+            req = self._make_request(
+                'GET', target_url,
                 headers={
                     'authorization': self._access_token,
                     'api_key':       self._secret_key,
                 },
                 get_params=search_params,
             )
+            # If the ID exists the data is simply returned.
+            section_result = req.json()
         else:
+            target_url = rel_url
             section_result = self._fetch_all(
-                'GET', rel_url,
+                'GET', target_url,
                 headers={
                     'authorization': self._access_token,
                     'api_key':       self._secret_key,
@@ -402,6 +408,30 @@ class CRM5BackofficeAdmin:
             section_id=activity_id,
             search_params=search_params,
         )
+
+    def activity_update(self, activity_id: str, activity_update: dict) -> bool:
+        """Update an activity.
+
+        Args:
+            activity_id (str): _description_
+            activity_update (dict): _description_
+
+        Returns:
+            bool: _description_
+        """
+
+        req = self._make_request(
+            'PUT',
+            self._buid_url(f'/activities/{activity_id}'),
+            json_data=activity_update,
+        )
+
+        req_data = req.json()
+
+        if req_data['id'] == activity_id:
+            return True
+
+        return False
 
     def contacts_list(self, contact_id=None, search_params=None):
         '''Get list of devices.
@@ -742,9 +772,15 @@ if __name__ == '__main__':
             f.write(json.dumps(api.dump_auth()))
     start = datetime.datetime.now()
 
-    devices = api.users_list()
+    devices = api.activities_list(
+        search_params={
+            'custom_fields': 'activity_number;A004920',
+            'include_custom_fields': True,
+        }
+    )
 
-    pprint.pprint(devices['content'])
+    print("Result")
+    pprint.pprint(devices)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
