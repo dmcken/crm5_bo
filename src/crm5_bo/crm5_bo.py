@@ -569,13 +569,7 @@ class CRM5BackofficeAdmin:
 
     def products(self, product_id=None, search_params=None):
         '''Get list of products.
-
-        product_data = api.products()
-
-        with open('products.txt','w') as f:
-            f.write(pprint.pformat(product_data))
         '''
-
         if product_id is not None:
             product_url = f"/products/{product_id}"
         else:
@@ -598,6 +592,36 @@ class CRM5BackofficeAdmin:
         # product_data contains content and paging
         # paging looks like the following:
         # 'paging': {'page': 1, 'size': 75, 'total': 75}
+
+        return product_data
+
+    def product_components(self, product_id, search_params=None):
+        '''Get list of product components.
+        '''
+        product_url = f"/products/{product_id}/components"
+
+        req = self._make_request('GET', product_url,
+            headers={
+                'authorization': self._access_token,
+                'api_key':       self._secret_key,
+            },
+        )
+        product_data = req.json()
+
+        return product_data
+
+    def product_prices(self, product_id):
+        '''Get list of product prices.
+        '''
+        product_url = f"/products/{product_id}/prices"
+
+        req = self._make_request('GET', product_url,
+            headers={
+                'authorization': self._access_token,
+                'api_key':       self._secret_key,
+            },
+        )
+        product_data = req.json()
 
         return product_data
 
@@ -734,68 +758,90 @@ class CRM5BackofficeAdmin:
 
         return subscription_data
 
+    def service_update(self, service_id: str, update_body: dict):
+        """Update service API call.
+
+        API Documentation:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/339e1a0af4eab-update-service
+
+        Args:
+            service_id (str): Service ID
+            params (dict): Body of request
+        """
+        pprint.pprint(update_body)
+        req = self._make_request(
+            'PUT',
+            f'/services/{service_id}',
+            headers={
+                'authorization': self._access_token,
+                'api_key': self._secret_key,
+            },
+            json_data=update_body,
+        )
+        update_result = req.json()
+
+        return update_result
+
+    def service_recommendation(self, **kwargs):
+        """Generate service recommendations.
+
+        URL:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/db24325a4a173-service-
+
+
+        """
+        search_params = {}
+        accepted_params = [
+            'product_id',
+            'service_id',
+        ]
+        for current_param in accepted_params:
+            if current_param in kwargs:
+                search_params[current_param] = kwargs[current_param]
+
+        req = self._make_request(
+            'GET',
+            f'/services/recommendation',
+            headers={
+                'authorization': self._access_token,
+                'api_key': self._secret_key,
+            },
+            get_params=search_params,
+        )
+        recommendation_result = req.json()
+
+        return recommendation_result['content']
 
 if __name__ == '__main__':
     import datetime
-    import json
     import os
     import pprint
+    import sys
 
     # External imports
     import dotenv
 
 
     dotenv.load_dotenv()
+    logging.getLogger('connectionpool').setLevel(logging.DEBUG)
     logging.basicConfig(
-        format='%(asctime)s - %(levelname)s - %(message)s',
+        format='%(asctime)s - %(module)s - %(levelname)s - %(message)s',
         level=logging.DEBUG,
     )
 
     api = CRM5BackofficeAdmin('app.crm.com')
-    api.debug(True)
-    try:
-        with open('auth.json', 'r', encoding='utf-8') as f:
-            auth_data = json.loads(f.read())
-        one_hr_future = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
-        logging.info(f"Exp: {auth_data['expiration_date']} -> {one_hr_future}")
-        if int(auth_data['expiration_date']) <= one_hr_future:
-            # If the expiration date is down to an hour.
-            raise FileNotFoundError
-        api.load_auth(auth_data=auth_data)
-    except FileNotFoundError:
-        logging.info("Creating new token")
-        api.login(
-            # Pull from .env
-            username   = os.environ.get('CRM_USERNAME'),
-            password   = os.environ.get('CRM_PASSWORD'),
-            api_key    = os.environ.get('API_KEY'),
-            secret_key = os.environ.get('SECRET_KEY'),
-        )
-        # Save the token
-        with open('auth.json', 'w', encoding='utf-8') as f:
-            f.write(json.dumps(api.dump_auth()))
+    # api.debug(True)
+    api.login(
+        # Pull from .env
+        username   = os.environ.get('CRM_USERNAME'),
+        password   = os.environ.get('CRM_PASSWORD'),
+        api_key    = os.environ.get('API_KEY'),
+        secret_key = os.environ.get('SECRET_KEY'),
+    )
+
     start = datetime.datetime.now()
 
-    devices = api.activities_list(
-        search_params={
-            'custom_fields': 'activity_number;A005090',
-            'include_custom_fields': True,
-        }
-    )
 
-    print("Result")
-    pprint.pprint(devices)
-
-    api.activity_update(
-        devices['content'][0]['id'],
-        {
-            # This overwrites all custom fields.
-            'custom_fields': [
-                {'key': 'status','value': 'Scheduled'}
-
-            ]
-        }
-    )
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
