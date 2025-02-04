@@ -768,7 +768,6 @@ class CRM5BackofficeAdmin:
             service_id (str): Service ID
             params (dict): Body of request
         """
-        pprint.pprint(update_body)
         req = self._make_request(
             'PUT',
             f'/services/{service_id}',
