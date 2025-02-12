@@ -758,6 +758,18 @@ class CRM5BackofficeAdmin:
 
         return subscription_data
 
+    def sales_model(self,):
+        """Sales models.
+
+        API Documentation:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/88466722bdd5c-list-sales-models
+        """
+        sales_models = self._section_list_handler(
+            '/sales_models',
+        )
+
+        return sales_models
+
     def service_update(self, service_id: str, update_body: dict):
         """Update service API call.
 
@@ -840,7 +852,8 @@ if __name__ == '__main__':
 
     start = datetime.datetime.now()
 
-
+    sales_models = api.sales_model()
+    pprint.pprint(sales_models, width=120)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
