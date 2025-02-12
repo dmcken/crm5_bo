@@ -578,20 +578,10 @@ class CRM5BackofficeAdmin:
         if search_params is None:
             search_params={}
 
-        search_params['size'] = self
-
-        req = self._make_request('GET', product_url,
-            headers={
-                'authorization': self._access_token,
-                'api_key':       self._secret_key,
-            },
-            get_params=search_params,
+        product_data = self._section_list_handler(
+            product_url,
+            search_params=search_params,
         )
-        product_data = req.json()
-
-        # product_data contains content and paging
-        # paging looks like the following:
-        # 'paging': {'page': 1, 'size': 75, 'total': 75}
 
         return product_data
 
@@ -852,7 +842,7 @@ if __name__ == '__main__':
 
     start = datetime.datetime.now()
 
-    sales_models = api.sales_model()
+    sales_models = api.products()
     pprint.pprint(sales_models, width=120)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
