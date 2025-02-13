@@ -437,6 +437,34 @@ class CRM5BackofficeAdmin:
 
         return False
 
+    def contact_update(self, contact_id: str, contact_update: dict) -> bool:
+        """Update an activity.
+
+        Args:
+            activity_id (str): _description_
+            activity_update (dict): _description_
+
+        Returns:
+            bool: _description_
+        """
+
+        req = self._make_request(
+            'PUT',
+            f'/contacts/{contact_id}',
+            json_data=contact_update,
+            headers={
+                'authorization': self._access_token,
+                'api_key':       self._secret_key,
+            },
+        )
+
+        req_data = req.json()
+
+        if req_data['id'] == contact_id:
+            return True
+
+        return False
+
     def contacts_list(self, contact_id=None, search_params=None):
         '''Get list of devices.
         '''
@@ -842,7 +870,7 @@ if __name__ == '__main__':
 
     start = datetime.datetime.now()
 
-    sales_models = api.products()
+    sales_models = api.sales_model()
     pprint.pprint(sales_models, width=120)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
