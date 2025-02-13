@@ -828,18 +828,12 @@ class CRM5BackofficeAdmin:
             if current_param in kwargs:
                 search_params[current_param] = kwargs[current_param]
 
-        req = self._make_request(
-            'GET',
-            f'/services/recommendation',
-            headers={
-                'authorization': self._access_token,
-                'api_key': self._secret_key,
-            },
-            get_params=search_params,
+        recommendation_result = self._section_list_handler(
+            '/services/recommendation',
+            search_params=search_params,
         )
-        recommendation_result = req.json()
 
-        return recommendation_result['content']
+        return recommendation_result
 
 if __name__ == '__main__':
     import datetime
@@ -870,8 +864,8 @@ if __name__ == '__main__':
 
     start = datetime.datetime.now()
 
-    sales_models = api.sales_model()
-    pprint.pprint(sales_models, width=120)
+    sales_models = api.service_recommendation(service_id='4347CE22CA9146CD83647B6B0614C67B')
+    pprint.pprint(list(map(lambda x: x['sku'], sales_models['content'])), width=120)
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
