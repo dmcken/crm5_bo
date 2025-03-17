@@ -161,3 +161,5 @@ cython_debug/
 
 # Local ignores
 *.json
+
+.env_*
