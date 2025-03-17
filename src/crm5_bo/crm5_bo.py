@@ -529,6 +529,24 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
+    def product_provisioning_providers(self, product_id):
+        '''Product Provisioning Providers.
+
+        API:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/841b6f1efed20-list-product-provisioning-providers
+        '''
+        product_url = f"/products/{product_id}/providers"
+
+        req = self._make_request('GET', product_url,
+            headers={
+                'authorization': self._access_token,
+                'api_key':       self._secret_key,
+            },
+        )
+        product_data = req.json()
+
+        return product_data
+
     @DeprecationWarning
     def services_list(self, service_id=None, search_params=None):
         '''Services list.
@@ -864,8 +882,13 @@ if __name__ == '__main__':
 
     start = datetime.datetime.now()
 
-    sales_models = api.service_recommendation(service_id='4347CE22CA9146CD83647B6B0614C67B')
-    pprint.pprint(list(map(lambda x: x['sku'], sales_models['content'])), width=120)
+    sales_models = api.product_provisioning_providers(
+        'ff1b6785-b6c7-4f89-ae6a-bceae2cac671'
+    )
+    pprint.pprint(
+        sales_models,
+        width=120
+    )
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
