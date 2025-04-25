@@ -215,7 +215,7 @@ class CRM5BackofficeAdmin:
         """Make iterative requests to fetch the complete result set.
 
         Args:
-            method (str): _description_
+            method (str): HTTP method to use.
             url (str): _description_
             json_data (_type_, optional): _description_. Defaults to None.
             headers (_type_, optional): _description_. Defaults to None.
@@ -547,7 +547,6 @@ class CRM5BackofficeAdmin:
 
         return product_data
 
-    @DeprecationWarning
     def services_list(self, service_id=None, search_params=None):
         '''Services list.
 
@@ -664,10 +663,6 @@ class CRM5BackofficeAdmin:
     def contacts(self, contact_id=None, search_params=None):
         '''Get list of contacts.
 
-        product_data = api.products()
-
-        with open('products.txt','w') as f:
-            f.write(pprint.pformat(product_data))
         '''
 
         if contact_id is not None:
@@ -882,12 +877,10 @@ if __name__ == '__main__':
 
     start = datetime.datetime.now()
 
-    sales_models = api.product_provisioning_providers(
-        'ff1b6785-b6c7-4f89-ae6a-bceae2cac671'
-    )
+    sales_models = api.contacts_list(contact_id='5fb845b6-ab61-4424-8807-0b7f30973a85')
     pprint.pprint(
         sales_models,
-        width=120
+        width=120,
     )
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
