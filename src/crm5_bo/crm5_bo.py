@@ -547,18 +547,6 @@ class CRM5BackofficeAdmin:
 
         return product_data
 
-    def services_list(self, service_id=None, search_params=None):
-        '''Services list.
-
-        REST endpoint no longer exists in v2 API.
-
-        '''
-        return self._section_list_handler(
-            '/services',
-            section_id=service_id,
-            search_params=search_params,
-        )
-
     def service_requests_list(self, service_requests_id=None, search_params=None):
         '''Service Requests list.
 
