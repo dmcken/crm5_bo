@@ -8,6 +8,10 @@ import logging
 import math
 import urllib.parse
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
+
+
 # External imports
 import requests
 
@@ -43,20 +47,21 @@ class CRM5BackofficeAdmin:
         Args:
             crm_domain (str): _description_
         """
-        self._crm_domain        = crm_domain
-        self._username          = None
-        self._password          = None
-        self._api_key           = None
-        self._secret_key        = None
-        self._access_token      = None
-        self._refresh_token     = None
-        self._debug_state       = False
-        self._timeout           = 60
-        self._default_page_size = 100
-        self._expiration_date   = None
-        self._organization_mod  = None
-        self._lockout_date      = None
-        self._password_expired  = None
+        self._crm_domain            = crm_domain
+        self._username              = None
+        self._password              = None
+        self._api_key               = None
+        self._secret_key            = None
+        self._access_token          = None
+        self._refresh_token         = None
+        self._debug_state           = False
+        self._timeout               = 60
+        self._default_page_size     = 100
+        self._default_thread_count  = 6
+        self._expiration_date       = None
+        self._organization_mod      = None
+        self._lockout_date          = None
+        self._password_expired      = None
 
     def fields_to_dict(self, custom_fields:list[dict[str,str]]):
         '''Fields to dictionary.
@@ -272,6 +277,161 @@ class CRM5BackofficeAdmin:
 
         return req_data
 
+    def _fetch_all_parallel_search_max(self, pages_dict: dict, method: str,
+            url: str, json_data=None, headers=None, get_params=None) -> int:
+        """_summary_
+
+        Args:
+            pages_dict (dict): _description_
+
+        Returns:
+            max_page: _description_
+        """
+        page_size = -1
+        page = 1
+        multiplier = 10
+        
+
+        for _ in range(10):
+            logger.debug(f"Testing page m: {page}")
+            pages_dict[page] = self._fetch_page(
+                method=method,
+                url=url,
+                json_data=json_data,
+                headers=headers,
+                get_params=get_params,
+                page_num=page,
+            )
+            logger.debug(f"Page {page} - paging {pages_dict[page]['paging']}")
+
+            if pages_dict[page]['paging']['has_more'] is False:
+                break
+
+            page *= multiplier
+
+        # page is an upper bound, page /= multiplier is the lower
+        # Binary search to the actual last page
+        if pages_dict[page]['paging']['size'] != 0:
+            # This actually is the last page
+            return page
+        else:
+            # Do the divide and conquer strategy
+            lower_bound = int(page / multiplier)
+            upper_bound = page
+
+            page = int(upper_bound // 2)
+            
+            while lower_bound <= upper_bound:
+                logger.debug(f"Testing page b: {page} : {lower_bound} => {upper_bound}")
+                pages_dict[page] = self._fetch_page(
+                    method=method,
+                    url=url,
+                    json_data=json_data,
+                    headers=headers,
+                    get_params=get_params,
+                    page_num=page,
+                )
+                logger.debug(f"Page {page} - paging {pages_dict[page]['paging']}")
+
+                if pages_dict[page]['paging']['has_more'] is False:
+                    if pages_dict[page]['paging']['size'] != 0:
+                        return page,pages_dict[page]['paging']['size']
+                    else:
+                        # We are too high
+                        upper_bound = page - 1
+                else: # has_more is True
+                    # We are too low
+                    lower_bound = page + 1
+
+                page = int((lower_bound + upper_bound) // 2)
+
+        return -1,-1
+
+    def _fetch_all_parallel(self, method: str, url: str, json_data=None,
+                            headers=None, get_params=None, thread_count: int = None
+                            ) -> dict:
+        """Make parallel requests to fetch the complete result set.
+
+        Args:
+            method (str): HTTP method to use.
+            url (str): _description_
+            json_data (_type_, optional): _description_. Defaults to None.
+            headers (_type_, optional): _description_. Defaults to None.
+            get_params (_type_, optional): _description_. Defaults to None.
+            thread_count (int, optional): Number fo parallel requests. Defaults
+                                          to None which then becomes 
+                                          _default_thread_count.
+
+        Returns:
+            dict: _description_
+        """
+        
+        logger.debug(f"Fetch all parallel {method} -> {url}")
+        if get_params is None:
+            get_params = {}
+        if 'size' not in get_params:
+            get_params['size'] = self._default_page_size
+        if thread_count is None:
+            thread_count = self._default_thread_count
+        
+
+        # Blank result set
+        req_data = { 'content': [], 'paging': { 'pages': 0, 'total': 0 }}
+
+        # Start search for max page
+        pages_dict = {}
+        max_page,last_page_size = self._fetch_all_parallel_search_max(
+            pages_dict, method, url, json_data, headers, get_params,
+        )
+
+        logger.error(f'Max page: {max_page} of size {last_page_size}')
+
+        # Clean pages_dict of all empty pages
+        pages_to_del = list(filter(lambda x: x > max_page, pages_dict.keys()))
+        for to_del in pages_to_del:
+            del pages_dict[to_del]
+
+
+        # Now paralell request the rest of the pages
+        def _fetch_page(page_id: int) -> dict:
+            result = self._fetch_page(
+                method=method,
+                url=url,
+                json_data=json_data,
+                headers=headers,
+                get_params=get_params,
+                page_num=page_id,
+            )
+            return page_id, result
+
+        fetched_pages = pages_dict.keys()
+        with ThreadPoolExecutor(max_workers=thread_count) as executor:
+            future_to_url = {
+                executor.submit(_fetch_page, page_id=page_id): page_id for page_id in filter(
+                    # Filter out pages we already have
+                    # We are fetching all from 1 to max_page
+                    lambda x: x not in fetched_pages, range(1, max_page)
+                )
+            }
+    
+            for future in as_completed(future_to_url):
+                page_id = future_to_url[future]
+                try:
+                    page_id, result = future.result()
+                    pages_dict[page_id] = result
+                except Exception as exc:
+                    print(f"Error: {page_id} generated an exception: {exc}")
+
+        # We should now have pages_dict fully populated
+        for curr_page_data in pages_dict.values():
+            req_data['content'].extend(curr_page_data)
+
+        req_data['paging']['pages'] = max_page
+        req_data['paging']['total'] = (max_page * get_params['size']) + last_page_size
+
+        return req_data
+
+
     def login(self, username: str, password: str, api_key: str, secret_key: str) -> bool:
         """Authenticate user.
 
@@ -358,7 +518,7 @@ class CRM5BackofficeAdmin:
         self._password_expired = auth_data['password_expired']
 
 
-    def _section_list_handler(self, rel_url, section_id=None, search_params=None):
+    def _section_list_handler(self, rel_url, section_id=None, search_params=None, parallel= False):
         """A generic section handler.
 
         This can be used to fetch a single entity specified by the section_id.
@@ -388,13 +548,17 @@ class CRM5BackofficeAdmin:
             section_result = req.json()
         else:
             target_url = rel_url
-            section_result = self._fetch_all(
+            if parallel:
+                fetch_call = self._fetch_all_parallel
+            else:
+                fetch_call = self._fetch_all
+            section_result = fetch_call(
                 'GET', target_url,
                 headers={
                     'authorization': self._access_token,
                     'api_key':       self._secret_key,
                 },
-                get_params=search_params,
+                get_params=search_params, 
             )
 
         return section_result
@@ -499,14 +663,21 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
-    def journals_list(self, service_id=None, search_params=None):
-        '''Services list.
+    def journals_list(self, journal_id=None, search_params=None):
+        """Journals list.
 
-        '''
+        Args:
+            journal_id (_type_, optional): Journal ID to fetch. Defaults to None.
+            search_params (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """        
         return self._section_list_handler(
             '/journals',
-            section_id=service_id,
+            section_id=journal_id,
             search_params=search_params,
+            parallel=True,
         )
 
     def orders_list(self, order_id=None, search_params=None):
@@ -841,6 +1012,7 @@ if __name__ == '__main__':
     import os
     import pprint
     import sys
+    import tracemalloc
 
     # External imports
     import dotenv
@@ -864,13 +1036,15 @@ if __name__ == '__main__':
     )
 
     start = datetime.datetime.now()
+    tracemalloc.start()
 
-    sales_models = api.contacts_list(contact_id='5fb845b6-ab61-4424-8807-0b7f30973a85')
-    pprint.pprint(
-        sales_models,
-        width=120,
-    )
+    journals = api.journals_list()
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
 
+    print(f"Journals: {journals['paging']}")
+
+    traced_memory = tracemalloc.get_traced_memory()
+    print(f"Memory stats: {traced_memory}")
+    tracemalloc.stop
     print(f"Duration: {duration_sec}")
