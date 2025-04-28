@@ -1,6 +1,6 @@
 
 
-__version__ = "0.0.26" 
+__version__ = "0.0.27" 
 
 from .crm5_bo import \
     CRM5APIError, \
