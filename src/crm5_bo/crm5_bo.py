@@ -563,7 +563,7 @@ class CRM5BackofficeAdmin:
 
         return section_result
 
-    def activities_list(self, activity_id=None, search_params=None):
+    def activities_list(self, activity_id=None, search_params=None, parallel=False):
         '''Activities list.
 
         '''
@@ -571,6 +571,7 @@ class CRM5BackofficeAdmin:
             '/activities',
             section_id=activity_id,
             search_params=search_params,
+            parallel=parallel,
         )
 
     def activity_update(self, activity_id: str, activity_update: dict) -> bool:
@@ -663,7 +664,7 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
         )
 
-    def journals_list(self, journal_id=None, search_params=None):
+    def journals_list(self, journal_id=None, search_params=None, parallel=False):
         """Journals list.
 
         Args:
@@ -677,7 +678,7 @@ class CRM5BackofficeAdmin:
             '/journals',
             section_id=journal_id,
             search_params=search_params,
-            parallel=True,
+            parallel=parallel,
         )
 
     def orders_list(self, order_id=None, search_params=None):
