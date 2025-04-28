@@ -365,7 +365,6 @@ class CRM5BackofficeAdmin:
         Returns:
             dict: _description_
         """
-        
         logger.debug(f"Fetch all parallel {method} -> {url}")
         if get_params is None:
             get_params = {}
@@ -518,7 +517,7 @@ class CRM5BackofficeAdmin:
         self._password_expired = auth_data['password_expired']
 
 
-    def _section_list_handler(self, rel_url, section_id=None, search_params=None, parallel= False):
+    def _section_list_handler(self, rel_url: str, section_id=None, search_params=None, parallel: bool=False):
         """A generic section handler.
 
         This can be used to fetch a single entity specified by the section_id.
@@ -549,6 +548,7 @@ class CRM5BackofficeAdmin:
         else:
             target_url = rel_url
             if parallel:
+                logger.debug(f"Setting parallel caller")
                 fetch_call = self._fetch_all_parallel
             else:
                 fetch_call = self._fetch_all
