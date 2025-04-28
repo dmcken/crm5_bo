@@ -424,7 +424,7 @@ class CRM5BackofficeAdmin:
 
         # We should now have pages_dict fully populated
         for curr_page_data in pages_dict.values():
-            req_data['content'].extend(curr_page_data)
+            req_data['content'].extend(curr_page_data['content'])
 
         req_data['paging']['pages'] = max_page
         req_data['paging']['total'] = (max_page * get_params['size']) + last_page_size
