@@ -633,13 +633,14 @@ class CRM5BackofficeAdmin:
 
         return False
 
-    def contacts_list(self, contact_id=None, search_params=None):
+    def contacts_list(self, contact_id=None, search_params=None, parallel=False):
         '''Get list of devices.
         '''
         return self._section_list_handler(
             '/contacts',
             section_id=contact_id,
             search_params=search_params,
+            parallel=parallel,
         )
 
     def custom_fields(self, custom_field_id=None):
@@ -657,7 +658,7 @@ class CRM5BackofficeAdmin:
         return self._section_list_handler(path)
 
 
-    def devices_list(self, search_params=None):
+    def devices_list(self, search_params=None, parallel=False):
         '''Get list of devices.
 
         https://speca.io/CRM/backoffice-admin#list_devices
@@ -665,6 +666,7 @@ class CRM5BackofficeAdmin:
         return self._section_list_handler(
             '/devices',
             search_params=search_params,
+            parallel=parallel,
         )
 
     def journals_list(self, journal_id=None, search_params=None, parallel=False):
@@ -722,7 +724,7 @@ class CRM5BackofficeAdmin:
 
         return product_data
 
-    def service_requests_list(self, service_requests_id=None, search_params=None):
+    def service_requests_list(self, service_requests_id=None, search_params=None, parallel=False):
         '''Service Requests list.
 
         '''
@@ -730,6 +732,7 @@ class CRM5BackofficeAdmin:
             '/service_requests',
             section_id=service_requests_id,
             search_params=search_params,
+            parallel=parallel,
         )
 
     def service_device_list(self, service_id: str):
@@ -739,7 +742,7 @@ class CRM5BackofficeAdmin:
             f'/services/{service_id}/devices',
         )
 
-    def subscriptions_list(self, subscriptions_id=None, search_params=None):
+    def subscriptions_list(self, subscriptions_id=None, search_params=None, parallel=False):
         """Fetch subscriptions list.
 
         Args:
@@ -753,6 +756,7 @@ class CRM5BackofficeAdmin:
             '/subscriptions',
             section_id=subscriptions_id,
             search_params=search_params,
+            parallel=parallel,
         )
 
     def teams_list(self, user_id=None, search_params=None):
