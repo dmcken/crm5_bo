@@ -963,6 +963,29 @@ class CRM5BackofficeAdmin:
 
         return subscription_data
 
+    def subscription_update(self, subscription_id: str, update_body: dict):
+        """Update subscription API call.
+
+        API Documentation:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/f4ad7c1a7ba99-update-subscription
+
+        Args:
+            subscription_id (str): Subscription ID
+            update_body (dict): Body of request
+        """
+        req = self._make_request(
+            'PUT',
+            f'/subscriptions/{subscription_id}',
+            headers={
+                'authorization': self._access_token,
+                'api_key': self._secret_key,
+            },
+            json_data=update_body,
+        )
+        update_result = req.json()
+
+        return update_result
+
     def sales_model(self,):
         """Sales models.
 
