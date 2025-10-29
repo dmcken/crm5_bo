@@ -320,7 +320,7 @@ class CRM5BackofficeAdmin:
             upper_bound = page
 
             page = int(upper_bound // 2)
-            
+
             while lower_bound <= upper_bound:
                 logger.debug(f"Testing page b: {page} : {lower_bound} => {upper_bound}")
                 pages_dict[page] = self._fetch_page(
@@ -359,7 +359,7 @@ class CRM5BackofficeAdmin:
             headers (_type_, optional): _description_. Defaults to None.
             get_params (_type_, optional): _description_. Defaults to None.
             thread_count (int, optional): Number fo parallel requests. Defaults
-                                          to None which then becomes 
+                                          to None which then becomes
                                           _default_thread_count.
 
         Returns:
@@ -372,7 +372,7 @@ class CRM5BackofficeAdmin:
             get_params['size'] = self._default_page_size
         if thread_count is None:
             thread_count = self._default_thread_count
-        
+
 
         # Blank result set
         req_data = { 'content': [], 'paging': { 'pages': 0, 'total': 0 }}
@@ -412,7 +412,7 @@ class CRM5BackofficeAdmin:
                     lambda x: x not in fetched_pages, range(1, max_page)
                 )
             }
-    
+
             for future in as_completed(future_to_url):
                 page_id = future_to_url[future]
                 try:
