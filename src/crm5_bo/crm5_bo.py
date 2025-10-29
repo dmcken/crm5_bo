@@ -862,7 +862,14 @@ class CRM5BackofficeAdmin:
 
         Getting unauthorized.
         '''
-        result = self._make_request("GET", f'/contacts/{contact_id}/subscriptions')
+        result = self._make_request(
+            "GET",
+            f'/contacts/{contact_id}/subscriptions',
+            headers={
+                'authorization': self._access_token,
+                'api_key':       self._secret_key,
+            },
+        )
 
         data = result.json()
 
