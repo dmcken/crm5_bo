@@ -678,7 +678,7 @@ class CRM5BackofficeAdmin:
 
         Returns:
             _type_: _description_
-        """        
+        """
         return self._section_list_handler(
             '/journals',
             section_id=journal_id,
