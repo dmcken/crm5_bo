@@ -290,7 +290,7 @@ class CRM5BackofficeAdmin:
         page_size = -1
         page = 1
         multiplier = 10
-        
+
 
         for _ in range(10):
             logger.debug(f"Testing page m: {page}")
@@ -551,7 +551,7 @@ class CRM5BackofficeAdmin:
         else:
             target_url = rel_url
             if parallel:
-                
+
                 fetch_call = self._fetch_all_parallel
             else:
                 fetch_call = self._fetch_all
@@ -561,7 +561,7 @@ class CRM5BackofficeAdmin:
                     'authorization': self._access_token,
                     'api_key':       self._secret_key,
                 },
-                get_params=search_params, 
+                get_params=search_params,
             )
 
         return section_result
