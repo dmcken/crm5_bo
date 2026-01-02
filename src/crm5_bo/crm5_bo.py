@@ -657,14 +657,14 @@ class CRM5BackofficeAdmin:
             path = '/custom_fields'
         return self._section_list_handler(path)
 
-
-    def devices_list(self, search_params=None, parallel=False):
+    def devices_list(self, device_id=None, search_params=None, parallel=False):
         '''Get list of devices.
 
         https://speca.io/CRM/backoffice-admin#list_devices
         '''
         return self._section_list_handler(
             '/devices',
+            section_id=device_id,
             search_params=search_params,
             parallel=parallel,
         )
