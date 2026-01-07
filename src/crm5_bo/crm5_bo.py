@@ -635,7 +635,6 @@ class CRM5BackofficeAdmin:
         Returns:
             bool: _description_
         """
-
         req = self._make_request(
             'PUT',
             f'/contacts/{contact_id}',
