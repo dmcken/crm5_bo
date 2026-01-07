@@ -608,8 +608,16 @@ class CRM5BackofficeAdmin:
         return False
 
     def contacts_list(self, contact_id=None, search_params=None, parallel=False):
-        '''Get list of devices.
-        '''
+        """List contacts meeting criteria.
+
+        Args:
+            contact_id (_type_, optional): _description_. Defaults to None.
+            search_params (_type_, optional): _description_. Defaults to None.
+            parallel (bool, optional): _description_. Defaults to False.
+
+        Returns:
+            _type_: _description_
+        """
         return self._section_list_handler(
             '/contacts',
             section_id=contact_id,
