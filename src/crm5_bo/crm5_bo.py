@@ -566,6 +566,8 @@ class CRM5BackofficeAdmin:
 
         return section_result
 
+### Start API calls
+
     def activities_list(self, activity_id=None, search_params=None, parallel=False):
         '''Activities list.
 
