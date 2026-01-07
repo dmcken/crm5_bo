@@ -605,6 +605,16 @@ class CRM5BackofficeAdmin:
 
         return False
 
+    def contacts_list(self, contact_id=None, search_params=None, parallel=False):
+        '''Get list of devices.
+        '''
+        return self._section_list_handler(
+            '/contacts',
+            section_id=contact_id,
+            search_params=search_params,
+            parallel=parallel,
+        )
+
     def contact_update(self, contact_id: str, contact_update: dict) -> bool:
         """Update an activity.
 
@@ -632,16 +642,6 @@ class CRM5BackofficeAdmin:
             return True
 
         return False
-
-    def contacts_list(self, contact_id=None, search_params=None, parallel=False):
-        '''Get list of devices.
-        '''
-        return self._section_list_handler(
-            '/contacts',
-            section_id=contact_id,
-            search_params=search_params,
-            parallel=parallel,
-        )
 
     def custom_fields(self, custom_field_id=None):
         """Get either all custom fields or a specific one.
