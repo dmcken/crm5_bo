@@ -106,6 +106,14 @@ class TestContacts:
         assert len(result['content']) == 100
         assert result['paging']['total'] == 250
 
+    def test_does_not_mutate_the_callers_search_params_dict(self, api):
+        response = FakeResponse(json_data={'content': [], 'paging': {'page': 1, 'size': 100, 'total': 0}})
+        caller_params = {'email_address': 'a@b.com'}
+        with patch('crm5_bo.crm5_bo.requests.request', return_value=response):
+            api.contacts(search_params=caller_params)
+
+        assert caller_params == {'email_address': 'a@b.com'}
+
 
 class TestContactSubscriptionList:
 

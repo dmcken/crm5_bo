@@ -91,6 +91,15 @@ class TestFetchPage:
 
         assert mock_request.call_args.args[-1] == {'size': 50, 'page': 3}
 
+    def test_does_not_mutate_the_callers_get_params_dict(self, api):
+        page = make_page([{'id': 1}])
+        caller_params = {'size': 50}
+        with patch.object(api, '_make_request') as mock_request:
+            mock_request.return_value.json.return_value = page
+            api._fetch_page('GET', '/contacts', get_params=caller_params, page_num=3)
+
+        assert caller_params == {'size': 50}
+
     def test_raises_when_content_is_none(self, api):
         page = make_page([], has_more=False)
         page['content'] = None
@@ -136,3 +145,11 @@ class TestFetchAll:
         # First call has no explicit page_num, subsequent calls walk pages 2, 3.
         assert mock_fetch_page.call_args_list[1].kwargs['page_num'] == 2
         assert mock_fetch_page.call_args_list[2].kwargs['page_num'] == 3
+
+    def test_does_not_mutate_the_callers_get_params_dict(self, api):
+        page = make_page([{'id': 1}], has_more=False)
+        caller_params = {'email_address': 'a@b.com'}
+        with patch.object(api, '_fetch_page', return_value=page):
+            api._fetch_all('GET', '/contacts', get_params=caller_params)
+
+        assert caller_params == {'email_address': 'a@b.com'}

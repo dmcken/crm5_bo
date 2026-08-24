@@ -213,6 +213,8 @@ class CRM5BackofficeAdmin:
         """
         if get_params is None:
             get_params = {}
+        else:
+            get_params = dict(get_params)
         if 'size' not in get_params:
             get_params['size'] = self._default_page_size
         if page_num is not None:
@@ -252,6 +254,8 @@ class CRM5BackofficeAdmin:
         logger.debug(f"Fetch all {method} -> {url}")
         if get_params is None:
             get_params = {}
+        else:
+            get_params = dict(get_params)
         if 'size' not in get_params:
             get_params['size'] = self._default_page_size
 
@@ -388,6 +392,8 @@ class CRM5BackofficeAdmin:
         logger.debug(f"Fetch all parallel {method} -> {url}")
         if get_params is None:
             get_params = {}
+        else:
+            get_params = dict(get_params)
         if 'size' not in get_params:
             get_params['size'] = self._default_page_size
         if thread_count is None:
@@ -885,7 +891,9 @@ class CRM5BackofficeAdmin:
             contact_url = "/contacts"
 
         if search_params is None:
-            search_params={}
+            search_params = {}
+        else:
+            search_params = dict(search_params)
 
         search_params['size'] = self._default_page_size
 
