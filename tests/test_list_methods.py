@@ -2,46 +2,48 @@ from unittest.mock import patch
 
 import pytest
 
-# (method name, rel_url, id kwarg name, supports parallel)
+# (method name, rel_url, id kwarg name)
 LIST_METHODS = [
-    ('activities_list', '/activities', 'activity_id', True),
-    ('contacts_list', '/contacts', 'contact_id', True),
-    ('devices_list', '/devices', 'device_id', True),
-    ('journals_list', '/journals', 'journal_id', True),
-    ('orders_list', '/orders', 'order_id', False),
-    ('products_list', '/products', 'product_id', False),
-    ('service_requests_list', '/service_requests', 'service_requests_id', True),
-    ('subscriptions_list', '/subscriptions', 'subscriptions_id', True),
-    ('teams_list', '/teams', 'user_id', False),
-    ('users_list', '/users', 'user_id', False),
+    ('activities', '/activities', 'activity_id'),
+    ('contacts', '/contacts', 'contact_id'),
+    ('devices', '/devices', 'device_id'),
+    ('journals', '/journals', 'journal_id'),
+    ('orders', '/orders', 'order_id'),
+    ('products', '/products', 'product_id'),
+    ('service_requests', '/service_requests', 'service_request_id'),
+    ('subscriptions', '/subscriptions', 'subscription_id'),
+    ('teams', '/teams', 'user_id'),
+    ('users', '/users', 'user_id'),
 ]
 
 
 class TestListMethodsDelegateToSectionHandler:
 
-    @pytest.mark.parametrize('method_name, rel_url, id_kwarg, supports_parallel', LIST_METHODS)
-    def test_forwards_rel_url_id_and_search_params(self, api, method_name, rel_url, id_kwarg, supports_parallel):
+    @pytest.mark.parametrize('method_name, rel_url, id_kwarg', LIST_METHODS)
+    def test_forwards_rel_url_id_and_search_params(self, api, method_name, rel_url, id_kwarg):
         sentinel = object()
         with patch.object(api, '_section_list_handler', return_value=sentinel) as mock_handler:
-            kwargs = {id_kwarg: 'the-id', 'search_params': {'q': 'x'}}
-            expected_kwargs = {'section_id': 'the-id', 'search_params': {'q': 'x'}}
-            if supports_parallel:
-                kwargs['parallel'] = True
-                expected_kwargs['parallel'] = True
-            result = getattr(api, method_name)(**kwargs)
+            result = getattr(api, method_name)(**{id_kwarg: 'the-id'}, search_params={'q': 'x'}, parallel=True)
 
         assert result is sentinel
-        mock_handler.assert_called_once_with(rel_url, **expected_kwargs)
+        mock_handler.assert_called_once_with(
+            rel_url,
+            section_id='the-id',
+            search_params={'q': 'x'},
+            parallel=True,
+        )
 
-    @pytest.mark.parametrize('method_name, rel_url, id_kwarg, supports_parallel', LIST_METHODS)
-    def test_defaults_to_no_id_and_no_search_params(self, api, method_name, rel_url, id_kwarg, supports_parallel):
+    @pytest.mark.parametrize('method_name, rel_url, id_kwarg', LIST_METHODS)
+    def test_defaults_to_no_id_no_search_params_and_no_parallel(self, api, method_name, rel_url, id_kwarg):
         with patch.object(api, '_section_list_handler') as mock_handler:
             getattr(api, method_name)()
 
-        expected_kwargs = {'section_id': None, 'search_params': None}
-        if supports_parallel:
-            expected_kwargs['parallel'] = False
-        mock_handler.assert_called_once_with(rel_url, **expected_kwargs)
+        mock_handler.assert_called_once_with(
+            rel_url,
+            section_id=None,
+            search_params=None,
+            parallel=False,
+        )
 
 
 class TestCustomFields:
@@ -59,22 +61,22 @@ class TestCustomFields:
         mock_handler.assert_called_once_with('/custom_fields/field-123')
 
 
-class TestSalesModel:
+class TestSalesModels:
 
     def test_delegates_to_section_handler(self, api):
         sentinel = object()
         with patch.object(api, '_section_list_handler', return_value=sentinel) as mock_handler:
-            result = api.sales_model()
+            result = api.sales_models()
 
         assert result is sentinel
-        mock_handler.assert_called_once_with('/sales_models')
+        mock_handler.assert_called_once_with('/sales_models', search_params=None, parallel=False)
 
 
-class TestServiceDeviceList:
+class TestServiceDevices:
 
     def test_builds_nested_resource_url(self, api):
         with patch.object(api, '_section_list_handler') as mock_handler:
-            api.service_device_list('service-123')
+            api.service_devices('service-123')
 
         mock_handler.assert_called_once_with('/services/service-123/devices')
 

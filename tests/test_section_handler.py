@@ -20,6 +20,15 @@ class TestSectionListHandler:
             timeout=api._timeout,
         )
 
+    def test_url_encodes_section_id(self, api):
+        response = FakeResponse(json_data={'id': 'sub/with slash'})
+
+        with patch('crm5_bo.crm5_bo.requests.request', return_value=response) as mock_request:
+            api._section_list_handler('/subscriptions', section_id='sub/with slash')
+
+        assert mock_request.call_args.args[1] == \
+            'https://example.crm.com/backoffice/v2/subscriptions/sub%2Fwith+slash'
+
     def test_uses_fetch_all_when_no_id_and_not_parallel(self, api):
         page = make_page([{'id': 1}])
         with patch.object(api, '_fetch_all', return_value=page) as mock_fetch_all:

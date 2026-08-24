@@ -4,13 +4,14 @@
 
 # System imports
 import base64
+import functools
 import http.client
 import json
 import logging
 import urllib.parse
+import warnings
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial
 
 
 # External imports
@@ -22,6 +23,32 @@ logger = logging.getLogger(__name__)
 
 class CRM5APIError(RuntimeError):
     """Raised when the CRM API returns a non-2xx HTTP response."""
+
+def _deprecated(replacement: str):
+    """Mark a method as deprecated in favour of `replacement`.
+
+    Each call emits a `DeprecationWarning` (visible under `python -W`,
+    pytest, etc.) and a matching `logger.warning` call (visible in
+    application logs even when warnings filters are left at their default),
+    identifying the replacement to migrate to. Once your logs stop showing
+    calls to a given deprecated name, it's safe to delete that alias.
+
+    Args:
+        replacement (str): Name of the method to use instead.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            message = (
+                f"{type(self).__name__}.{func.__name__}() is deprecated "
+                f"and will be removed in a future release, use "
+                f".{replacement}() instead."
+            )
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            logger.warning(message)
+            return func(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 class CRM5BackofficeAdmin:
     '''CRM.com BackOffice Admin API.
@@ -614,7 +641,7 @@ class CRM5BackofficeAdmin:
             f"Entered _section_list_handler: {rel_url} # {section_id} # {search_params} # {parallel}"
         )
         if section_id is not None:
-            target_url = f"{rel_url}/{section_id}"
+            target_url = f"{rel_url}/{urllib.parse.quote_plus(str(section_id))}"
 
             req = self._make_request(
                 'GET', target_url,
@@ -640,9 +667,8 @@ class CRM5BackofficeAdmin:
 
 ### Start API calls
 
-    def activities_list(self, activity_id=None, search_params=None, parallel=False):
-        '''Activities list.
-
+    def activities(self, activity_id=None, search_params=None, parallel=False):
+        '''Activities list, or fetch a single activity by id.
         '''
         return self._section_list_handler(
             '/activities',
@@ -662,7 +688,6 @@ class CRM5BackofficeAdmin:
             bool: True if the update succeeded (the response id matches
                 activity_id), False otherwise.
         """
-
         req = self._make_request(
             'PUT',
             f'/activities/{activity_id}',
@@ -677,8 +702,8 @@ class CRM5BackofficeAdmin:
 
         return False
 
-    def contacts_list(self, contact_id=None, search_params=None, parallel=False):
-        """List contacts meeting criteria.
+    def contacts(self, contact_id=None, search_params=None, parallel=False):
+        """List contacts meeting criteria, or fetch a single contact by id.
 
         Args:
             contact_id (str, optional): Fetch a single contact by id instead
@@ -698,6 +723,31 @@ class CRM5BackofficeAdmin:
             search_params=search_params,
             parallel=parallel,
         )
+
+    def contact_services(self, contact_id: str) -> dict:
+        '''Fetch a contact's services list.
+
+        Docs:
+        https://speca.io/CRM/backoffice-admin#list-contact-services
+        '''
+        req = self._make_request(
+            'GET',
+            f"/contacts/{contact_id}/services?"
+            "include_order_info=true&include_subscription=true&include_total=true",
+            headers=self._auth_headers(),
+        )
+
+        return req.json()
+
+    def contact_subscriptions(self, contact_id: str) -> list:
+        '''Fetch a contact's subscriptions list.'''
+        req = self._make_request(
+            'GET',
+            f'/contacts/{contact_id}/subscriptions',
+            headers=self._auth_headers(),
+        )
+
+        return req.json()['content']
 
     def contact_update(self, contact_id: str, contact_update: dict) -> bool:
         """Update a contact.
@@ -743,8 +793,8 @@ class CRM5BackofficeAdmin:
             path = '/custom_fields'
         return self._section_list_handler(path)
 
-    def devices_list(self, device_id=None, search_params=None, parallel=False):
-        '''Get list of devices.
+    def devices(self, device_id=None, search_params=None, parallel=False):
+        '''Get list of devices, or a single device by id.
 
         https://speca.io/CRM/backoffice-admin#list_devices
         '''
@@ -755,8 +805,8 @@ class CRM5BackofficeAdmin:
             parallel=parallel,
         )
 
-    def journals_list(self, journal_id=None, search_params=None, parallel=False):
-        """Journals list.
+    def journals(self, journal_id=None, search_params=None, parallel=False):
+        """Journals list, or fetch a single journal by id.
 
         Args:
             journal_id (str, optional): Journal ID to fetch. Defaults to None.
@@ -776,25 +826,47 @@ class CRM5BackofficeAdmin:
             parallel=parallel,
         )
 
-    def orders_list(self, order_id=None, search_params=None):
-        '''Orders list.
-
+    def orders(self, order_id=None, search_params=None, parallel=False):
+        '''Orders list, or fetch a single order by id.
         '''
         return self._section_list_handler(
             '/orders',
             section_id=order_id,
             search_params=search_params,
+            parallel=parallel,
         )
 
-    def products_list(self, product_id=None, search_params=None):
-        '''Fetch Product list.
-
+    def products(self, product_id=None, search_params=None, parallel=False):
+        '''Fetch product list, or a single product by id.
         '''
         return self._section_list_handler(
             '/products',
             section_id=product_id,
             search_params=search_params,
+            parallel=parallel,
         )
+
+    def product_components(self, product_id, search_params=None):
+        '''Get list of product components.
+        '''
+        req = self._make_request(
+            'GET',
+            f"/products/{product_id}/components",
+            headers=self._auth_headers(),
+        )
+
+        return req.json()
+
+    def product_prices(self, product_id):
+        '''Get list of product prices.
+        '''
+        req = self._make_request(
+            'GET',
+            f"/products/{product_id}/prices",
+            headers=self._auth_headers(),
+        )
+
+        return req.json()
 
     def product_provisioning_providers(self, product_id):
         '''Product Provisioning Providers.
@@ -802,38 +874,88 @@ class CRM5BackofficeAdmin:
         API:
         https://crmcom.stoplight.io/docs/stoplight-api-doc/841b6f1efed20-list-product-provisioning-providers
         '''
-        product_url = f"/products/{product_id}/providers"
-
-        req = self._make_request('GET', product_url,
+        req = self._make_request(
+            'GET',
+            f"/products/{product_id}/providers",
             headers=self._auth_headers(),
         )
-        product_data = req.json()
 
-        return product_data
+        return req.json()
 
-    def service_requests_list(self, service_requests_id=None, search_params=None, parallel=False):
-        '''Service Requests list.
+    def sales_models(self, search_params=None, parallel=False):
+        """Sales models.
 
-        '''
+        API Documentation:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/88466722bdd5c-list-sales-models
+        """
         return self._section_list_handler(
-            '/service_requests',
-            section_id=service_requests_id,
+            '/sales_models',
             search_params=search_params,
             parallel=parallel,
         )
 
-    def service_device_list(self, service_id: str):
-        '''Fetch service device list.
+    def service_devices(self, service_id: str) -> dict:
+        '''Fetch a service's device list.
+
+        Docs:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/0745b67da81df-list-service-devices
         '''
+        return self._section_list_handler(f'/services/{service_id}/devices')
+
+    def service_recommendation(self, **kwargs):
+        """Generate service recommendations.
+
+        URL:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/db24325a4a173-service-
+        """
+        search_params = {}
+        accepted_params = [
+            'product_id',
+            'service_id',
+        ]
+        for current_param in accepted_params:
+            if current_param in kwargs:
+                search_params[current_param] = kwargs[current_param]
+
         return self._section_list_handler(
-            f'/services/{service_id}/devices',
+            '/services/recommendation',
+            search_params=search_params,
         )
 
-    def subscriptions_list(self, subscriptions_id=None, search_params=None, parallel=False):
-        """Fetch subscriptions list.
+    def service_requests(self, service_request_id=None, search_params=None, parallel=False):
+        '''Service Requests list, or fetch a single service request by id.
+        '''
+        return self._section_list_handler(
+            '/service_requests',
+            section_id=service_request_id,
+            search_params=search_params,
+            parallel=parallel,
+        )
+
+    def service_update(self, service_id: str, update_body: dict):
+        """Update service API call.
+
+        API Documentation:
+        https://crmcom.stoplight.io/docs/stoplight-api-doc/339e1a0af4eab-update-service
 
         Args:
-            subscriptions_id (str, optional): Fetch a single subscription by
+            service_id (str): Service ID
+            update_body (dict): Body of request
+        """
+        req = self._make_request(
+            'PUT',
+            f'/services/{service_id}',
+            headers=self._auth_headers(),
+            json_data=update_body,
+        )
+
+        return req.json()
+
+    def subscriptions(self, subscription_id=None, search_params=None, parallel=False):
+        """Fetch subscriptions list, or a single subscription by id.
+
+        Args:
+            subscription_id (str, optional): Fetch a single subscription by
                 id instead of listing. Defaults to None.
             search_params (dict, optional): Query string / search parameters.
                 Defaults to None.
@@ -841,201 +963,25 @@ class CRM5BackofficeAdmin:
                 parallel. Defaults to False.
 
         Returns:
-            dict: Either the single subscription (if subscriptions_id is
+            dict: Either the single subscription (if subscription_id is
                 given) or the (possibly paginated) listing.
         """
         return self._section_list_handler(
             '/subscriptions',
-            section_id=subscriptions_id,
+            section_id=subscription_id,
             search_params=search_params,
             parallel=parallel,
         )
 
-    def teams_list(self, user_id=None, search_params=None):
-        '''Users list.
-
-        '''
-        return self._section_list_handler(
-            '/teams',
-            section_id=user_id,
-            search_params=search_params,
-        )
-
-    def users_list(self, user_id=None, search_params=None):
-        '''Users list.
-
-        '''
-        return self._section_list_handler(
-            '/users',
-            section_id=user_id,
-            search_params=search_params,
-        )
-
-    def products(self, product_id=None, search_params=None):
-        '''Get list of products.
-        '''
-        if product_id is not None:
-            product_url = f"/products/{product_id}"
-        else:
-            product_url = "/products"
-
-        if search_params is None:
-            search_params={}
-
-        product_data = self._section_list_handler(
-            product_url,
-            search_params=search_params,
-        )
-
-        return product_data
-
-    def product_components(self, product_id, search_params=None):
-        '''Get list of product components.
-        '''
-        product_url = f"/products/{product_id}/components"
-
-        req = self._make_request('GET', product_url,
-            headers=self._auth_headers(),
-        )
-        product_data = req.json()
-
-        return product_data
-
-    def product_prices(self, product_id):
-        '''Get list of product prices.
-        '''
-        product_url = f"/products/{product_id}/prices"
-
-        req = self._make_request('GET', product_url,
-            headers=self._auth_headers(),
-        )
-        product_data = req.json()
-
-        return product_data
-
-    def contacts(self, contact_id=None, search_params=None):
-        '''Get list of contacts.
-
-        '''
-
-        if contact_id is not None:
-            contact_url = f"/contacts/{contact_id}"
-        else:
-            contact_url = "/contacts"
-
-        if search_params is None:
-            search_params = {}
-        else:
-            search_params = dict(search_params)
-
-        search_params['size'] = self._default_page_size
-
-        req = self._make_request('GET', contact_url,
-            headers=self._auth_headers(),
-            get_params=search_params,
-        )
-        product_data = req.json()
-
-        # product_data contains content and paging
-        # paging looks like the following:
-        # 'paging': {'page': 1, 'size': 75, 'total': 75}
-
-        return product_data
-
-    def contact_subscription_list(self, contact_id=None):
-        '''Contact Subscriptions list.
-
-        Getting unauthorized.
-        '''
-        result = self._make_request(
-            "GET",
-            f'/contacts/{contact_id}/subscriptions',
-            headers=self._auth_headers(),
-        )
-
-        data = result.json()
-
-        return data['content']
-
-    def contact_services_list(self, contact_id=None):
-        '''Contact Services List.
-
-        Getting unauthorized.
-        '''
-        result = self._make_request(
-            "GET",
-            f'/contacts/{contact_id}/services?include_subscription=true',
-            headers=self._auth_headers(),
-        )
-
-        data = result.json()
-
-        return data
-
-    def subscriptions_devices_list(self, subscription_id):
-        '''Fetch subscription devices list.
-        '''
-        result = self._make_request(
-            "GET",
+    def subscription_devices(self, subscription_id: str) -> list:
+        '''Fetch a subscription's device list.'''
+        req = self._make_request(
+            'GET',
             f'/subscriptions/{subscription_id}/devices',
             headers=self._auth_headers(),
         )
 
-        data = result.json()
-
-        return data['content']
-
-    def list_contact_services(self, contact_id: str):
-        '''List contact services.
-
-        Docs:
-        https://speca.io/CRM/backoffice-admin#list-contact-services
-
-
-        '''
-        # ?size=100&include_subscription=true
-        req = self._make_request('GET', f"/contacts/{contact_id}/services?" + \
-            "include_order_info=true&include_subscription=true&include_total=true",
-            headers=self._auth_headers(),
-        )
-        product_data = req.json()
-
-        return product_data
-
-    def list_service_devices(self, service_id: str) -> dict:
-        """List Service Devices
-
-        Docs:
-        https://crmcom.stoplight.io/docs/stoplight-api-doc/0745b67da81df-list-service-devices
-
-        Args:
-            service_id (str): Id of the service whose devices to list.
-
-        Returns:
-            dict: The service's device listing.
-        """
-        req = self._make_request('GET', f"/services/{service_id}/devices",
-            headers=self._auth_headers(),
-        )
-        device_data = req.json()
-
-        return device_data
-
-    def subscription(self, subscription_id: str = None):
-        '''Subscriptions.
-        '''
-        if subscription_id is None:
-            final_url = '/subscriptions'
-        else:
-            subscription_id_encoded = urllib.parse.quote_plus(subscription_id)
-            final_url = f"/subscriptions/{subscription_id_encoded}"
-
-        req = self._make_request('GET', final_url,
-            headers=self._auth_headers(),
-        )
-        subscription_data = req.json()
-
-        return subscription_data
+        return req.json()['content']
 
     def subscription_update(self, subscription_id: str, update_body: dict):
         """Update subscription API call.
@@ -1053,65 +999,107 @@ class CRM5BackofficeAdmin:
             headers=self._auth_headers(),
             json_data=update_body,
         )
-        update_result = req.json()
 
-        return update_result
+        return req.json()
 
-    def sales_model(self,):
-        """Sales models.
-
-        API Documentation:
-        https://crmcom.stoplight.io/docs/stoplight-api-doc/88466722bdd5c-list-sales-models
-        """
-        sales_models = self._section_list_handler(
-            '/sales_models',
-        )
-
-        return sales_models
-
-    def service_update(self, service_id: str, update_body: dict):
-        """Update service API call.
-
-        API Documentation:
-        https://crmcom.stoplight.io/docs/stoplight-api-doc/339e1a0af4eab-update-service
-
-        Args:
-            service_id (str): Service ID
-            params (dict): Body of request
-        """
-        req = self._make_request(
-            'PUT',
-            f'/services/{service_id}',
-            headers=self._auth_headers(),
-            json_data=update_body,
-        )
-        update_result = req.json()
-
-        return update_result
-
-    def service_recommendation(self, **kwargs):
-        """Generate service recommendations.
-
-        URL:
-        https://crmcom.stoplight.io/docs/stoplight-api-doc/db24325a4a173-service-
-
-
-        """
-        search_params = {}
-        accepted_params = [
-            'product_id',
-            'service_id',
-        ]
-        for current_param in accepted_params:
-            if current_param in kwargs:
-                search_params[current_param] = kwargs[current_param]
-
-        recommendation_result = self._section_list_handler(
-            '/services/recommendation',
+    def teams(self, user_id=None, search_params=None, parallel=False):
+        '''Teams list, or fetch a single team by id.
+        '''
+        return self._section_list_handler(
+            '/teams',
+            section_id=user_id,
             search_params=search_params,
+            parallel=parallel,
         )
 
-        return recommendation_result
+    def users(self, user_id=None, search_params=None, parallel=False):
+        '''Users list, or fetch a single user by id.
+        '''
+        return self._section_list_handler(
+            '/users',
+            section_id=user_id,
+            search_params=search_params,
+            parallel=parallel,
+        )
+
+### Deprecated aliases
+#
+# These wrap the methods above under their old names so existing callers
+# keep working. Each call logs a warning (and raises a DeprecationWarning)
+# naming the replacement to migrate to; once your logs stop showing calls
+# to a given name, it's safe to delete that alias.
+
+    @_deprecated('activities')
+    def activities_list(self, activity_id=None, search_params=None, parallel=False):
+        return self.activities(activity_id, search_params, parallel)
+
+    @_deprecated('contacts')
+    def contacts_list(self, contact_id=None, search_params=None, parallel=False):
+        return self.contacts(contact_id, search_params, parallel)
+
+    @_deprecated('contact_services')
+    def contact_services_list(self, contact_id=None):
+        return self.contact_services(contact_id)
+
+    @_deprecated('contact_services')
+    def list_contact_services(self, contact_id: str):
+        return self.contact_services(contact_id)
+
+    @_deprecated('contact_subscriptions')
+    def contact_subscription_list(self, contact_id=None):
+        return self.contact_subscriptions(contact_id)
+
+    @_deprecated('devices')
+    def devices_list(self, device_id=None, search_params=None, parallel=False):
+        return self.devices(device_id, search_params, parallel)
+
+    @_deprecated('journals')
+    def journals_list(self, journal_id=None, search_params=None, parallel=False):
+        return self.journals(journal_id, search_params, parallel)
+
+    @_deprecated('orders')
+    def orders_list(self, order_id=None, search_params=None):
+        return self.orders(order_id, search_params)
+
+    @_deprecated('products')
+    def products_list(self, product_id=None, search_params=None):
+        return self.products(product_id, search_params)
+
+    @_deprecated('sales_models')
+    def sales_model(self):
+        return self.sales_models()
+
+    @_deprecated('service_devices')
+    def service_device_list(self, service_id: str):
+        return self.service_devices(service_id)
+
+    @_deprecated('service_devices')
+    def list_service_devices(self, service_id: str) -> dict:
+        return self.service_devices(service_id)
+
+    @_deprecated('service_requests')
+    def service_requests_list(self, service_requests_id=None, search_params=None, parallel=False):
+        return self.service_requests(service_requests_id, search_params, parallel)
+
+    @_deprecated('subscriptions')
+    def subscriptions_list(self, subscriptions_id=None, search_params=None, parallel=False):
+        return self.subscriptions(subscriptions_id, search_params, parallel)
+
+    @_deprecated('subscriptions')
+    def subscription(self, subscription_id: str = None):
+        return self.subscriptions(subscription_id)
+
+    @_deprecated('subscription_devices')
+    def subscriptions_devices_list(self, subscription_id):
+        return self.subscription_devices(subscription_id)
+
+    @_deprecated('teams')
+    def teams_list(self, user_id=None, search_params=None):
+        return self.teams(user_id, search_params)
+
+    @_deprecated('users')
+    def users_list(self, user_id=None, search_params=None):
+        return self.users(user_id, search_params)
 
 if __name__ == '__main__':
     import datetime
@@ -1145,7 +1133,7 @@ if __name__ == '__main__':
     # tracemalloc.start()
 
     contact_account = '63ca00d7-57a4-4ca5-ab76-cda37e8cbd64'
-    contact_res = api.contacts_list(search_params={
+    contact_res = api.contacts(search_params={
         'email_address': 'ameena.mm34@gmail.com',
         #'custom_fields': f"account_number;{contact_account}",
         # 'include_custom_fields': 'true',
