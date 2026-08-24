@@ -5,7 +5,6 @@
 # System imports
 import http.client
 import logging
-import math
 import urllib.parse
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
