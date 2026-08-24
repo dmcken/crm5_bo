@@ -99,11 +99,19 @@ class CRM5BackofficeAdmin:
         if a debug_state is passed then set the debug state and logging
         parameters. If None is set then simply return the value.
 
+        Warning:
+            Enabling debug logs the raw HTTP request/response, including the
+            `authorization`/`api_key` headers and the login password. Do not
+            enable this in shared terminals or environments where logs are
+            persisted or forwarded.
+
         Args:
-            debug_state (bool, optional): _description_. Defaults to None.
+            debug_state (bool, optional): True to enable verbose HTTP debug
+                logging, False to disable it. Defaults to None, which leaves
+                the current state unchanged.
 
         Returns:
-            bool: _description_
+            bool: The current debug state.
         """
         if debug_state is None:
             return self._debug_state
@@ -496,8 +504,16 @@ class CRM5BackofficeAdmin:
     def dump_auth(self,) -> dict:
         """Dump the authentication data for cache.
 
+        Warning:
+            The returned dict includes the plaintext username and password
+            alongside the tokens. If the caller persists this to disk or any
+            other store, that store becomes a plaintext credential store and
+            must be secured (e.g. restrictive file permissions, encryption
+            at rest) accordingly.
+
         Returns:
-            dict: _description_
+            dict: Username, password, API/secret keys, and token/session
+                state, suitable for passing to `load_auth` later.
         """
         return {
             'username': self._username,
@@ -514,8 +530,14 @@ class CRM5BackofficeAdmin:
     def load_auth(self, auth_data: dict) -> None:
         """Load the authentication data from cache.
 
+        Warning:
+            `auth_data` is expected to carry the plaintext username and
+            password (as produced by `dump_auth`). Only load this from a
+            trusted, appropriately secured source.
+
         Args:
-            auth_data (dict): _description_
+            auth_data (dict): Previously cached auth data, as returned by
+                `dump_auth`.
         """
         self._username         = auth_data['username']
         self._password         = auth_data['password']
