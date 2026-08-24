@@ -655,11 +655,12 @@ class CRM5BackofficeAdmin:
         """Update an activity.
 
         Args:
-            activity_id (str): _description_
-            activity_update (dict): _description_
+            activity_id (str): Id of the activity to update.
+            activity_update (dict): Fields to update on the activity.
 
         Returns:
-            bool: _description_
+            bool: True if the update succeeded (the response id matches
+                activity_id), False otherwise.
         """
 
         req = self._make_request(
