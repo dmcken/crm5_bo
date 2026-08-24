@@ -296,11 +296,23 @@ class CRM5BackofficeAdmin:
         return req_data
 
     def _fetch_all_parallel_search_max(self, pages_dict: dict, method: str,
-            url: str, json_data=None, headers=None, get_params=None) -> tuple[int, int]:
-        """_summary_
+            url: str, json_data: dict=None, headers: dict=None, get_params: dict=None) -> tuple[int, int]:
+        """Find the last page of a paginated result set.
+
+        Uses an exponential probe (page 1, 10, 100, ...) to find an upper
+        bound, then binary searches between the last two probed pages to
+        find the exact last page. Every page fetched along the way is
+        cached into `pages_dict` so the caller doesn't need to re-fetch it.
 
         Args:
-            pages_dict (dict): _description_
+            pages_dict (dict): Cache of already-fetched pages, keyed by page
+                number; populated with every page fetched during the search.
+            method (str): HTTP method to use.
+            url (str): URL to request, relative to the backoffice base path.
+            json_data (dict, optional): JSON data to post. Defaults to None.
+            headers (dict, optional): Headers to use for request. Defaults to None.
+            get_params (dict, optional): Query string parameters shared by
+                every page request. Defaults to None.
 
         Returns:
             tuple[int, int]: The last page number and that page's record count.
