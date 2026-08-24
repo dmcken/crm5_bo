@@ -700,14 +700,15 @@ class CRM5BackofficeAdmin:
         )
 
     def contact_update(self, contact_id: str, contact_update: dict) -> bool:
-        """Update an activity.
+        """Update a contact.
 
         Args:
-            activity_id (str): _description_
-            activity_update (dict): _description_
+            contact_id (str): Id of the contact to update.
+            contact_update (dict): Fields to update on the contact.
 
         Returns:
-            bool: _description_
+            bool: True if the update succeeded (the response id matches
+                contact_id), False otherwise.
         """
         req = self._make_request(
             'PUT',
