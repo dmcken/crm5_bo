@@ -730,7 +730,12 @@ class CRM5BackofficeAdmin:
         https://crmcom.stoplight.io/docs/stoplight-api-doc/9ae36ade79cf3-list-custom-fields
 
         Args:
-            id (_type_, optional): _description_. Defaults to None.
+            custom_field_id (str, optional): Fetch a single custom field by
+                id instead of listing all. Defaults to None.
+
+        Returns:
+            dict: Either the single custom field (if custom_field_id is
+                given) or the full listing.
         """
         if custom_field_id is not None:
             path = f'/custom_fields/{custom_field_id}'
