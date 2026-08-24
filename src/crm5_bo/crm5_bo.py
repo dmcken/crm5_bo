@@ -344,7 +344,6 @@ class CRM5BackofficeAdmin:
         Returns:
             tuple[int, int]: The last page number and that page's record count.
         """
-        page_size = -1
         page = 1
         multiplier = 10
 
