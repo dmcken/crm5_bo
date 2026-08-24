@@ -1073,7 +1073,7 @@ if __name__ == '__main__':
     )
 
     api = CRM5BackofficeAdmin('app.crm.com')
-    # api.debug(True)
+    # api.debug(False)
     api.login(
         # Pull from .env
         username   = os.environ.get('CRM_USERNAME'),
@@ -1083,15 +1083,43 @@ if __name__ == '__main__':
     )
 
     start = datetime.datetime.now()
-    tracemalloc.start()
+    # tracemalloc.start()
 
-    journals = api.journals_list()
+    contact_account = '63ca00d7-57a4-4ca5-ab76-cda37e8cbd64'
+    contact_res = api.contacts_list(search_params={
+        'email_address': 'ameena.mm34@gmail.com',
+        #'custom_fields': f"account_number;{contact_account}",
+        # 'include_custom_fields': 'true',
+    })
+    pprint.pprint(contact_res)
+    # contact = contact_res['content'][0]
+    # services_res = api.devices_list(search_params={'contact_id': contact['id']})
+    # pprint.pprint(services_res)
+    # devices_res = api.devices_list(search_params={'serial_number': '0100000000002'})
+    # pprint.pprint(devices_res)
+
+    #api.contacts_device_list()
+
+    # for curr_id in ids.split():
+    #     print("Processing: {curr_id}")
+    #     curr_contact = api.contacts_list(search_params={
+    #         'custom_fields': f"account_number;{curr_id}",
+    #         'include_custom_fields': 'true',
+    #     })
+    #     pprint.pprint(curr_contact['content'])
+    #     curr_subscription = api.subscriptions_list(
+    #         search_params={'contact_id': curr_contact['content'][0]['id']}
+    #     )
+    #     pprint.pprint(curr_subscription)
+    #     api.subscription_update(curr_subscription['content'][0]['id'], {
+    #         'action': 'CANCEL',
+    #     })
     end = datetime.datetime.now()
     duration_sec = (end - start).total_seconds()
+    # pprint.pprint(curr_contact['content'], width=120)
+    # pprint.pprint(result)
 
-    print(f"Journals: {journals['paging']}")
-
-    traced_memory = tracemalloc.get_traced_memory()
-    print(f"Memory stats: {traced_memory}")
-    tracemalloc.stop
+    # traced_memory = tracemalloc.get_traced_memory()
+    # print(f"Memory stats: {traced_memory}")
+    # tracemalloc.stop()
     print(f"Duration: {duration_sec}")
