@@ -1009,10 +1009,10 @@ class CRM5BackofficeAdmin:
         https://crmcom.stoplight.io/docs/stoplight-api-doc/0745b67da81df-list-service-devices
 
         Args:
-            service_id (str): _description_
+            service_id (str): Id of the service whose devices to list.
 
         Returns:
-            dict: _description_
+            dict: The service's device listing.
         """
         req = self._make_request('GET', f"/services/{service_id}/devices",
             headers=self._auth_headers(),
