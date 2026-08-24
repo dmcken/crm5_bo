@@ -833,11 +833,16 @@ class CRM5BackofficeAdmin:
         """Fetch subscriptions list.
 
         Args:
-            subscriptions_id (_type_, optional): _description_. Defaults to None.
-            search_params (_type_, optional): _description_. Defaults to None.
+            subscriptions_id (str, optional): Fetch a single subscription by
+                id instead of listing. Defaults to None.
+            search_params (dict, optional): Query string / search parameters.
+                Defaults to None.
+            parallel (bool, optional): Whether to fetch multiple pages in
+                parallel. Defaults to False.
 
         Returns:
-            _type_: _description_
+            dict: Either the single subscription (if subscriptions_id is
+                given) or the (possibly paginated) listing.
         """
         return self._section_list_handler(
             '/subscriptions',
