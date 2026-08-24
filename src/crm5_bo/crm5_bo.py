@@ -759,11 +759,15 @@ class CRM5BackofficeAdmin:
         """Journals list.
 
         Args:
-            journal_id (_type_, optional): Journal ID to fetch. Defaults to None.
-            search_params (_type_, optional): _description_. Defaults to None.
+            journal_id (str, optional): Journal ID to fetch. Defaults to None.
+            search_params (dict, optional): Query string / search parameters.
+                Defaults to None.
+            parallel (bool, optional): Whether to fetch multiple pages in
+                parallel. Defaults to False.
 
         Returns:
-            _type_: _description_
+            dict: Either the single journal (if journal_id is given) or the
+                (possibly paginated) listing.
         """
         return self._section_list_handler(
             '/journals',
