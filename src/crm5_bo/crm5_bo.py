@@ -21,17 +21,7 @@ http_logger = logging.getLogger('httplogger')
 logger = logging.getLogger(__name__)
 
 class CRM5APIError(RuntimeError):
-    """CRM 5 API Errors.
-
-    Args:
-        RuntimeError (_type_): _description_
-
-    Raises:
-        RuntimeError: _description_
-
-    Returns:
-        _type_: _description_
-    """
+    """Raised when the CRM API returns a non-2xx HTTP response."""
 
 class CRM5BackofficeAdmin:
     '''CRM.com BackOffice Admin API.
