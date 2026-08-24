@@ -134,6 +134,17 @@ class CRM5BackofficeAdmin:
 
         return urllib.parse.urljoin(f"https://{self._crm_domain}", base_url)
 
+    def _auth_headers(self) -> dict:
+        """Build the authorization headers used by authenticated API calls.
+
+        Returns:
+            dict: Headers containing the access token and API secret key.
+        """
+        return {
+            'authorization': self._access_token,
+            'api_key':       self._secret_key,
+        }
+
     def _make_request(self, method, url, json_data=None, headers=None,
                       get_params=None) -> dict:
         """Make a request to the CRM api.
@@ -540,10 +551,7 @@ class CRM5BackofficeAdmin:
 
             req = self._make_request(
                 'GET', target_url,
-                headers={
-                    'authorization': self._access_token,
-                    'api_key':       self._secret_key,
-                },
+                headers=self._auth_headers(),
                 get_params=search_params,
             )
             # If the ID exists the data is simply returned.
@@ -557,10 +565,7 @@ class CRM5BackofficeAdmin:
                 fetch_call = self._fetch_all
             section_result = fetch_call(
                 'GET', target_url,
-                headers={
-                    'authorization': self._access_token,
-                    'api_key':       self._secret_key,
-                },
+                headers=self._auth_headers(),
                 get_params=search_params,
             )
 
@@ -594,10 +599,7 @@ class CRM5BackofficeAdmin:
             'PUT',
             f'/activities/{activity_id}',
             json_data=activity_update,
-            headers={
-                'authorization': self._access_token,
-                'api_key':       self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
 
         req_data = req.json()
@@ -639,10 +641,7 @@ class CRM5BackofficeAdmin:
             'PUT',
             f'/contacts/{contact_id}',
             json_data=contact_update,
-            headers={
-                'authorization': self._access_token,
-                'api_key':       self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
 
         req_data = req.json()
@@ -724,10 +723,7 @@ class CRM5BackofficeAdmin:
         product_url = f"/products/{product_id}/providers"
 
         req = self._make_request('GET', product_url,
-            headers={
-                'authorization': self._access_token,
-                'api_key':       self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
         product_data = req.json()
 
@@ -812,10 +808,7 @@ class CRM5BackofficeAdmin:
         product_url = f"/products/{product_id}/components"
 
         req = self._make_request('GET', product_url,
-            headers={
-                'authorization': self._access_token,
-                'api_key':       self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
         product_data = req.json()
 
@@ -827,10 +820,7 @@ class CRM5BackofficeAdmin:
         product_url = f"/products/{product_id}/prices"
 
         req = self._make_request('GET', product_url,
-            headers={
-                'authorization': self._access_token,
-                'api_key':       self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
         product_data = req.json()
 
@@ -852,10 +842,7 @@ class CRM5BackofficeAdmin:
         search_params['size'] = self._default_page_size
 
         req = self._make_request('GET', contact_url,
-            headers={
-                'authorization': self._access_token,
-                'api_key': self._secret_key,
-            },
+            headers=self._auth_headers(),
             get_params=search_params,
         )
         product_data = req.json()
@@ -874,10 +861,7 @@ class CRM5BackofficeAdmin:
         result = self._make_request(
             "GET",
             f'/contacts/{contact_id}/subscriptions',
-            headers={
-                'authorization': self._access_token,
-                'api_key':       self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
 
         data = result.json()
@@ -892,10 +876,7 @@ class CRM5BackofficeAdmin:
         result = self._make_request(
             "GET",
             f'/contacts/{contact_id}/services?include_subscription=true',
-            headers={
-                'authorization': self._access_token,
-                'api_key': self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
 
         data = result.json()
@@ -922,10 +903,7 @@ class CRM5BackofficeAdmin:
         # ?size=100&include_subscription=true
         req = self._make_request('GET', f"/contacts/{contact_id}/services?" + \
             "include_order_info=true&include_subscription=true&include_total=true",
-            headers={
-                'authorization': self._access_token,
-                'api_key': self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
         product_data = req.json()
 
@@ -944,10 +922,7 @@ class CRM5BackofficeAdmin:
             dict: _description_
         """
         req = self._make_request('GET', f"/services/{service_id}/devices",
-            headers={
-                'authorization': self._access_token,
-                'api_key': self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
         device_data = req.json()
 
@@ -963,10 +938,7 @@ class CRM5BackofficeAdmin:
             final_url = f"/subscriptions/{subscription_id_encoded}"
 
         req = self._make_request('GET', final_url,
-            headers={
-                'authorization': self._access_token,
-                'api_key': self._secret_key,
-            },
+            headers=self._auth_headers(),
         )
         subscription_data = req.json()
 
@@ -985,10 +957,7 @@ class CRM5BackofficeAdmin:
         req = self._make_request(
             'PUT',
             f'/subscriptions/{subscription_id}',
-            headers={
-                'authorization': self._access_token,
-                'api_key': self._secret_key,
-            },
+            headers=self._auth_headers(),
             json_data=update_body,
         )
         update_result = req.json()
@@ -1020,10 +989,7 @@ class CRM5BackofficeAdmin:
         req = self._make_request(
             'PUT',
             f'/services/{service_id}',
-            headers={
-                'authorization': self._access_token,
-                'api_key': self._secret_key,
-            },
+            headers=self._auth_headers(),
             json_data=update_body,
         )
         update_result = req.json()
