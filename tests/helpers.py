@@ -1,4 +1,6 @@
 """Shared test helpers for building fake HTTP responses and CRM pages."""
+import base64
+import json
 
 
 class FakeResponse:
@@ -11,6 +13,17 @@ class FakeResponse:
 
     def json(self):
         return self._json_data
+
+
+def make_jwt(claims: dict) -> str:
+    """Build a JWT-shaped string carrying the given claims (unsigned)."""
+
+    def b64url(data: bytes) -> str:
+        return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
+
+    header = b64url(json.dumps({'alg': 'none', 'typ': 'JWT'}).encode())
+    payload = b64url(json.dumps(claims).encode())
+    return f'{header}.{payload}.'
 
 
 def make_page(content, page=1, size=100, total=None, has_more=False):

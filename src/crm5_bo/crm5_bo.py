@@ -3,7 +3,9 @@
 '''
 
 # System imports
+import base64
 import http.client
+import json
 import logging
 import urllib.parse
 
@@ -492,13 +494,42 @@ class CRM5BackofficeAdmin:
 
         return
 
+    def _current_user_id(self) -> str:
+        """Get the id of the currently logged in user.
+
+        The `/users/authenticate` response does not include the user's id
+        directly, but it is carried as the `sub` claim of the access token
+        (a JWT). We only ever read our own token here, so the payload is
+        decoded without verifying its signature.
+
+        Returns:
+            str: The current user's id (GUID).
+        """
+        payload_segment = self._access_token.split('.')[1]
+        padding = '=' * (-len(payload_segment) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(payload_segment + padding))
+
+        return payload['sub']
+
     def logout(self) -> None:
         """Logout of API.
 
-        Logout from API and invalidate access and refresh tokens.
+        Terminates the current user's session, invalidating the access and
+        refresh tokens.
 
+        Docs:
+        https://speca.io/CRM/backoffice-admin#sign-out-user
         """
-        return
+        user_id = self._current_user_id()
+
+        self._make_request(
+            'POST',
+            f'/users/{user_id}/sign_out',
+            headers=self._auth_headers(),
+        )
+
+        self._access_token = None
+        self._refresh_token = None
 
     def dump_auth(self,) -> dict:
         """Dump the authentication data for cache.

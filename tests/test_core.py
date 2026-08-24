@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from crm5_bo import CRM5BackofficeAdmin
 
-from helpers import FakeResponse
+from helpers import FakeResponse, make_jwt
 
 
 class TestFieldsToDict:
@@ -139,3 +139,32 @@ class TestLogin:
         assert api._organization_mod == 'LIVE'
         assert api._lockout_date is None
         assert api._password_expired is False
+
+
+class TestCurrentUserId:
+
+    def test_decodes_sub_claim_from_access_token(self, api):
+        api._access_token = make_jwt({'sub': 'user-guid-1', 'type': 'access'})
+        assert api._current_user_id() == 'user-guid-1'
+
+
+class TestLogout:
+
+    def test_signs_out_current_user_and_clears_tokens(self, api):
+        api._access_token = make_jwt({'sub': 'user-guid-1', 'type': 'access'})
+        api._refresh_token = 'some-refresh-token'
+        expected_headers = api._auth_headers()
+        response = FakeResponse(status_code=200, text='')
+
+        with patch('crm5_bo.crm5_bo.requests.request', return_value=response) as mock_request:
+            api.logout()
+
+        mock_request.assert_called_once_with(
+            'POST',
+            'https://example.crm.com/backoffice/v2/users/user-guid-1/sign_out',
+            json=None,
+            headers=expected_headers,
+            timeout=api._timeout,
+        )
+        assert api._access_token is None
+        assert api._refresh_token is None
