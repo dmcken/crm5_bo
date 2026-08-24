@@ -298,14 +298,14 @@ class CRM5BackofficeAdmin:
         return req_data
 
     def _fetch_all_parallel_search_max(self, pages_dict: dict, method: str,
-            url: str, json_data=None, headers=None, get_params=None) -> int:
+            url: str, json_data=None, headers=None, get_params=None) -> tuple[int, int]:
         """_summary_
 
         Args:
             pages_dict (dict): _description_
 
         Returns:
-            max_page: _description_
+            tuple[int, int]: The last page number and that page's record count.
         """
         page_size = -1
         page = 1
@@ -333,7 +333,7 @@ class CRM5BackofficeAdmin:
         # Binary search to the actual last page
         if pages_dict[page]['paging']['size'] != 0:
             # This actually is the last page
-            return page
+            return page, pages_dict[page]['paging']['size']
         else:
             # Do the divide and conquer strategy
             lower_bound = int(page / multiplier)

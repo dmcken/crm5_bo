@@ -43,6 +43,19 @@ class TestFetchAllParallelSearchMax:
 
         assert (max_page, last_page_size) == (3, 10)
 
+    def test_returns_a_tuple_when_the_exponential_probe_lands_exactly_on_the_last_page(self, api):
+        # A single-page result: the very first probed page (page 1) already
+        # has has_more=False and a non-zero size, so the "exact hit" branch
+        # is taken rather than the binary search.
+        fake_fetch_page = _paged_dataset(total_records=2, page_size=10)
+
+        with patch.object(api, '_fetch_page', side_effect=fake_fetch_page):
+            max_page, last_page_size = api._fetch_all_parallel_search_max(
+                {}, 'GET', '/contacts', get_params={'size': 10},
+            )
+
+        assert (max_page, last_page_size) == (1, 2)
+
 
 class TestFetchAllParallel:
 
@@ -63,3 +76,13 @@ class TestFetchAllParallel:
             result = api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
 
         assert sorted(result['content'], key=lambda r: r['id']) == [{'id': i} for i in range(15)]
+
+    def test_single_page_dataset(self, api):
+        # Previously raised TypeError: the exponential probe's exact-hit
+        # branch returned a bare int instead of (page, size).
+        fake_fetch_page = _paged_dataset(total_records=2, page_size=10)
+
+        with patch.object(api, '_fetch_page', side_effect=fake_fetch_page):
+            result = api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
+
+        assert result['content'] == [{'id': 0}, {'id': 1}]

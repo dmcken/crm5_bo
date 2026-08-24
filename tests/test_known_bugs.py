@@ -16,28 +16,6 @@ from helpers import FakeResponse, make_page
 @pytest.mark.xfail(
     strict=True,
     reason=(
-        "_fetch_all_parallel_search_max returns a bare page number instead "
-        "of a (page, size) tuple whenever the exponential probe's first "
-        "checked page is already the last page with data (e.g. any "
-        "single-page result set). Callers do "
-        "`max_page, last_page_size = self._fetch_all_parallel_search_max(...)`, "
-        "which raises TypeError. See crm5_bo.py _fetch_all_parallel_search_max."
-    ),
-)
-def test_search_max_returns_a_tuple_for_a_single_page_dataset(api):
-    page = make_page([{'id': 1}, {'id': 2}], size=2, has_more=False)
-
-    with patch.object(api, '_fetch_page', return_value=page):
-        max_page, last_page_size = api._fetch_all_parallel_search_max(
-            {}, 'GET', '/contacts', get_params={'size': 10},
-        )
-
-    assert (max_page, last_page_size) == (1, 2)
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
         "_fetch_all_parallel computes paging.total as "
         "`max_page * get_params['size'] + last_page_size`, which counts the "
         "last (possibly partial) page as a full page, overcounting the true "
