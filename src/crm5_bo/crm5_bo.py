@@ -36,7 +36,8 @@ class CRM5BackofficeAdmin:
         """Constructor.
 
         Args:
-            crm_domain (str): _description_
+            crm_domain (str): CRM tenant domain (e.g. 'app.crm.com'), used to
+                build the base URL for all API requests.
         """
         self._crm_domain            = crm_domain
         self._username              = None
