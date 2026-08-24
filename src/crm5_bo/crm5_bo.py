@@ -413,10 +413,7 @@ class CRM5BackofficeAdmin:
                 merged and 'paging' summarizing the full result set.
         """
         logger.debug(f"Fetch all parallel {method} -> {url}")
-        if get_params is None:
-            get_params = {}
-        else:
-            get_params = dict(get_params)
+        get_params = {} if get_params is None else dict(get_params)
         if 'size' not in get_params:
             get_params['size'] = self._default_page_size
         if thread_count is None:
@@ -641,11 +638,7 @@ class CRM5BackofficeAdmin:
             section_result = req.json()
         else:
             target_url = rel_url
-            if parallel:
-
-                fetch_call = self._fetch_all_parallel
-            else:
-                fetch_call = self._fetch_all
+            fetch_call = self._fetch_all_parallel if parallel else self._fetch_all
             section_result = fetch_call(
                 'GET', target_url,
                 headers=self._auth_headers(),
@@ -770,10 +763,7 @@ class CRM5BackofficeAdmin:
             dict: Either the single custom field (if custom_field_id is
                 given) or the full listing.
         """
-        if custom_field_id is not None:
-            path = f'/custom_fields/{custom_field_id}'
-        else:
-            path = '/custom_fields'
+        path = f'/custom_fields/{custom_field_id}' if custom_field_id is not None else '/custom_fields'
         return self._section_list_handler(path)
 
     def devices(self, device_id=None, search_params=None, parallel=False):
@@ -1107,8 +1097,6 @@ if __name__ == '__main__':
     import datetime
     import os
     import pprint
-    import sys
-    import tracemalloc
 
     # External imports
     import dotenv
@@ -1131,7 +1119,7 @@ if __name__ == '__main__':
         secret_key = os.environ.get('SECRET_KEY'),
     )
 
-    start = datetime.datetime.now()
+    start = datetime.datetime.now(tz=datetime.timezone.utc)
     # tracemalloc.start()
 
     contact_account = '63ca00d7-57a4-4ca5-ab76-cda37e8cbd64'
@@ -1163,7 +1151,7 @@ if __name__ == '__main__':
     #     api.subscription_update(curr_subscription['content'][0]['id'], {
     #         'action': 'CANCEL',
     #     })
-    end = datetime.datetime.now()
+    end = datetime.datetime.now(tz=datetime.timezone.utc)
     duration_sec = (end - start).total_seconds()
     # pprint.pprint(curr_contact['content'], width=120)
     # pprint.pprint(result)

@@ -1,9 +1,9 @@
 import http.client
 from unittest.mock import patch
 
-from crm5_bo import CRM5BackofficeAdmin
-
 from helpers import FakeResponse, make_jwt
+
+from crm5_bo import CRM5BackofficeAdmin
 
 
 class TestFieldsToDict:

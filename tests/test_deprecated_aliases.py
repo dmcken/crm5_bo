@@ -40,9 +40,8 @@ class TestDeprecatedAliasesDelegate:
         self, api, deprecated_name, canonical_name, call_kwargs, expected_args,
     ):
         sentinel = object()
-        with patch.object(api, canonical_name, return_value=sentinel) as mock_canonical:
-            with pytest.warns(DeprecationWarning):
-                result = getattr(api, deprecated_name)(**call_kwargs)
+        with patch.object(api, canonical_name, return_value=sentinel) as mock_canonical, pytest.warns(DeprecationWarning):
+            result = getattr(api, deprecated_name)(**call_kwargs)
 
         assert result is sentinel
         mock_canonical.assert_called_once_with(*expected_args)
@@ -54,18 +53,15 @@ class TestDeprecatedAliasesWarn:
     def test_emits_a_deprecation_warning_naming_the_replacement(
         self, api, deprecated_name, canonical_name, call_kwargs, expected_args,
     ):
-        with patch.object(api, canonical_name):
-            with pytest.warns(DeprecationWarning, match=rf"\.{deprecated_name}\(\).*\.{canonical_name}\(\)"):
-                getattr(api, deprecated_name)(**call_kwargs)
+        with patch.object(api, canonical_name), pytest.warns(DeprecationWarning, match=rf"\.{deprecated_name}\(\).*\.{canonical_name}\(\)"):
+            getattr(api, deprecated_name)(**call_kwargs)
 
     @pytest.mark.parametrize('deprecated_name, canonical_name, call_kwargs, expected_args', DEPRECATED_ALIASES)
     def test_logs_a_warning_naming_the_replacement(
         self, api, deprecated_name, canonical_name, call_kwargs, expected_args, caplog,
     ):
-        with patch.object(api, canonical_name):
-            with caplog.at_level(logging.WARNING, logger='crm5_bo.crm5_bo'):
-                with pytest.warns(DeprecationWarning):
-                    getattr(api, deprecated_name)(**call_kwargs)
+        with patch.object(api, canonical_name), caplog.at_level(logging.WARNING, logger='crm5_bo.crm5_bo'), pytest.warns(DeprecationWarning):
+            getattr(api, deprecated_name)(**call_kwargs)
 
         assert any(
             deprecated_name in record.message and canonical_name in record.message

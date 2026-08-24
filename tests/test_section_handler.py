@@ -31,9 +31,9 @@ class TestSectionListHandler:
 
     def test_uses_fetch_all_when_no_id_and_not_parallel(self, api):
         page = make_page([{'id': 1}])
-        with patch.object(api, '_fetch_all', return_value=page) as mock_fetch_all:
-            with patch.object(api, '_fetch_all_parallel') as mock_fetch_all_parallel:
-                result = api._section_list_handler('/contacts', search_params={'email_address': 'a@b.com'})
+        with patch.object(api, '_fetch_all', return_value=page) as mock_fetch_all, \
+                patch.object(api, '_fetch_all_parallel') as mock_fetch_all_parallel:
+            result = api._section_list_handler('/contacts', search_params={'email_address': 'a@b.com'})
 
         assert result is page
         mock_fetch_all.assert_called_once()
@@ -42,9 +42,9 @@ class TestSectionListHandler:
 
     def test_uses_fetch_all_parallel_when_requested(self, api):
         page = make_page([{'id': 1}])
-        with patch.object(api, '_fetch_all_parallel', return_value=page) as mock_fetch_all_parallel:
-            with patch.object(api, '_fetch_all') as mock_fetch_all:
-                result = api._section_list_handler('/contacts', parallel=True)
+        with patch.object(api, '_fetch_all_parallel', return_value=page) as mock_fetch_all_parallel, \
+                patch.object(api, '_fetch_all') as mock_fetch_all:
+            result = api._section_list_handler('/contacts', parallel=True)
 
         assert result is page
         mock_fetch_all_parallel.assert_called_once()

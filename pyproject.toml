@@ -33,7 +33,33 @@ Issues = "https://github.com/dmcken/crm5_bo/issues"
 test = [
   "pytest>=8",
 ]
+lint = [
+  "ruff>=0.16",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 150
+
+[tool.ruff.lint]
+# Pinned explicitly: ruff's own no-config default varies by version/install
+# (as of ruff 0.16 it's effectively "ALL" on this machine), which isn't
+# reproducible across environments or CI. This is the rule set the codebase
+# has actually been cleaned up against.
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+    "EXE",  # flake8-executable
+    "FA",   # flake8-future-annotations
+    "DTZ",  # flake8-datetimez
+]

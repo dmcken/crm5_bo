@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-
 from helpers import make_page
 
 
@@ -107,9 +106,8 @@ class TestFetchAllParallel:
                 raise RuntimeError('boom')
             return dataset(page_num=page_num, **kwargs)
 
-        with patch.object(api, '_fetch_page', side_effect=flaky_fetch_page):
-            with pytest.raises(RuntimeError, match='boom'):
-                api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
+        with patch.object(api, '_fetch_page', side_effect=flaky_fetch_page), pytest.raises(RuntimeError, match='boom'):
+            api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
 
     def test_does_not_mutate_the_callers_get_params_dict(self, api):
         fake_fetch_page = _paged_dataset(total_records=25, page_size=10)
