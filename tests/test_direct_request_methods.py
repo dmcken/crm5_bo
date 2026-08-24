@@ -153,7 +153,7 @@ class TestSubscriptionsDevicesList:
             'GET',
             'https://example.crm.com/backoffice/v2/subscriptions/sub-1/devices',
             json=None,
-            headers=None,
+            headers=api._auth_headers(),
             timeout=api._timeout,
         )
 

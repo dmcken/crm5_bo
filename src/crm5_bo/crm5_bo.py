@@ -908,7 +908,11 @@ class CRM5BackofficeAdmin:
     def subscriptions_devices_list(self, subscription_id):
         '''Fetch subscription devices list.
         '''
-        result = self._make_request("GET", f'/subscriptions/{subscription_id}/devices')
+        result = self._make_request(
+            "GET",
+            f'/subscriptions/{subscription_id}/devices',
+            headers=self._auth_headers(),
+        )
 
         data = result.json()
 
