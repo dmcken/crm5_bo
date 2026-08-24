@@ -409,7 +409,7 @@ class CRM5BackofficeAdmin:
             pages_dict, method, url, json_data, headers, get_params,
         )
 
-        logger.error(f'Max page: {max_page} of size {last_page_size}')
+        logger.debug(f'Max page: {max_page} of size {last_page_size}')
 
         # Clean pages_dict of all empty pages
         pages_to_del = list(filter(lambda x: x > max_page, pages_dict.keys()))
