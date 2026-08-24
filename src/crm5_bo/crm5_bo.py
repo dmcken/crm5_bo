@@ -267,10 +267,7 @@ class CRM5BackofficeAdmin:
                 pages and 'paging' reflecting the full result set.
         """
         logger.debug(f"Fetch all {method} -> {url}")
-        if get_params is None:
-            get_params = {}
-        else:
-            get_params = dict(get_params)
+        get_params = {} if get_params is None else dict(get_params)
         if 'size' not in get_params:
             get_params['size'] = self._default_page_size
 
