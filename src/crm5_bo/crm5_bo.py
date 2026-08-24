@@ -188,20 +188,21 @@ class CRM5BackofficeAdmin:
 
         return req
 
-    def _fetch_page(self, method: str, url: str, json_data=None, headers=None,
-                    get_params=None, page_num: int=None):
+    def _fetch_page(self, method: str, url: str, json_data: dict=None, headers: dict=None,
+                    get_params: dict=None, page_num: int=None) -> dict:
         """Fetch a single page of a query.
 
         Args:
-            method (str): _description_
-            url (str): _description_
-            json_data (_type_, optional): _description_. Defaults to None.
-            headers (_type_, optional): _description_. Defaults to None.
-            get_params (_type_, optional): _description_. Defaults to None.
-            page_num (int, optional): _description_. Defaults to None.
+            method (str): HTTP method to use.
+            url (str): URL to request, relative to the backoffice base path.
+            json_data (dict, optional): JSON data to post. Defaults to None.
+            headers (dict, optional): Headers to use for request. Defaults to None.
+            get_params (dict, optional): Query string parameters. Defaults to None.
+            page_num (int, optional): Page number to fetch; sets the 'page'
+                query parameter when given. Defaults to None.
 
         Returns:
-            _type_: _description_
+            dict: The page's response body, with 'content' and 'paging' keys.
         """
         if get_params is None:
             get_params = {}
