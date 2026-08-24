@@ -492,7 +492,7 @@ class CRM5BackofficeAdmin:
         self._lockout_date = auth_data['lockout_date']
         self._password_expired = auth_data['password_expired']
 
-        return
+        return True
 
     def _current_user_id(self) -> str:
         """Get the id of the currently logged in user.

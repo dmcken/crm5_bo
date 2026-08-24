@@ -120,7 +120,7 @@ class TestLogin:
         })
 
         with patch('crm5_bo.crm5_bo.requests.request', return_value=response) as mock_request:
-            api.login('user@example.com', 'hunter2', 'live-api-key', 'live-secret-key')
+            result = api.login('user@example.com', 'hunter2', 'live-api-key', 'live-secret-key')
 
         mock_request.assert_called_once_with(
             'POST',
@@ -133,6 +133,7 @@ class TestLogin:
             headers={'api_key': 'live-api-key'},
             timeout=api._timeout,
         )
+        assert result is True
         assert api._access_token == 'new-access-token'
         assert api._refresh_token == 'new-refresh-token'
         assert api._expiration_date == '2026-12-31'
