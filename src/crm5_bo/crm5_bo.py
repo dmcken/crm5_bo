@@ -146,22 +146,22 @@ class CRM5BackofficeAdmin:
             'api_key':       self._secret_key,
         }
 
-    def _make_request(self, method, url, json_data=None, headers=None,
-                      get_params=None) -> dict:
+    def _make_request(self, method: str, url: str, json_data: dict=None, headers: dict=None,
+                      get_params: dict=None) -> requests.Response:
         """Make a request to the CRM api.
 
         Args:
-            method (_type_): HTTP method to use.
-            url (_type_): URL to request.
-            json_data (_type_, optional): JSON data to post. Defaults to None.
-            headers (_type_, optional): Headers to use for request. Defaults to None.
-            get_params (_type_, optional): If this is a HTTP GET the URL query parameters. Defaults to None.
+            method (str): HTTP method to use.
+            url (str): URL to request, relative to the backoffice base path.
+            json_data (dict, optional): JSON data to post. Defaults to None.
+            headers (dict, optional): Headers to use for request. Defaults to None.
+            get_params (dict, optional): If this is a HTTP GET the URL query parameters. Defaults to None.
 
         Raises:
-            RuntimeError: _description_
+            CRM5APIError: If the response status code is not in the 2xx range.
 
         Returns:
-            dict: _description_
+            requests.Response: The raw HTTP response.
         """
         req_params = {}
 
