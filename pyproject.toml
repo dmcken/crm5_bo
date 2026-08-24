@@ -28,3 +28,12 @@ path = "src/crm5_bo/__init__.py"
 [project.urls]
 Homepage = "https://github.com/dmcken/crm5_bo"
 Issues = "https://github.com/dmcken/crm5_bo/issues"
+
+[dependency-groups]
+test = [
+  "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
