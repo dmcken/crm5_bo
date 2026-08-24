@@ -10,13 +10,10 @@ import json
 import logging
 import urllib.parse
 import warnings
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 
 # External imports
 import requests
-
 
 http_logger = logging.getLogger('httplogger')
 logger = logging.getLogger(__name__)
@@ -112,7 +109,7 @@ class CRM5BackofficeAdmin:
         '''
         return {v['key']:v['value'] for v in custom_fields}
 
-    def debug(self, debug_state: bool=None) -> bool:
+    def debug(self, debug_state: bool | None = None) -> bool:
         """Get / Set debug state.
 
         if a debug_state is passed then set the debug state and logging
@@ -173,8 +170,8 @@ class CRM5BackofficeAdmin:
             'api_key':       self._secret_key,
         }
 
-    def _make_request(self, method: str, url: str, json_data: dict=None, headers: dict=None,
-                      get_params: dict=None) -> requests.Response:
+    def _make_request(self, method: str, url: str, json_data: dict | None = None, headers: dict | None = None,
+                      get_params: dict | None = None) -> requests.Response:
         """Make a request to the CRM api.
 
         Args:
@@ -215,8 +212,8 @@ class CRM5BackofficeAdmin:
 
         return req
 
-    def _fetch_page(self, method: str, url: str, json_data: dict=None, headers: dict=None,
-                    get_params: dict=None, page_num: int=None) -> dict:
+    def _fetch_page(self, method: str, url: str, json_data: dict | None = None, headers: dict | None = None,
+                    get_params: dict | None = None, page_num: int | None = None) -> dict:
         """Fetch a single page of a query.
 
         Args:
@@ -258,7 +255,7 @@ class CRM5BackofficeAdmin:
             req_data['paging']['total'] = req_data['paging']['size']
         return req_data
 
-    def _fetch_all(self, method: str, url: str, json_data: dict=None, headers: dict=None, get_params: dict=None) -> dict:
+    def _fetch_all(self, method: str, url: str, json_data: dict | None = None, headers: dict | None = None, get_params: dict | None = None) -> dict:
         """Make iterative requests to fetch the complete result set.
 
         Args:
@@ -289,7 +286,6 @@ class CRM5BackofficeAdmin:
         )
 
         page_size = int(req_data['paging']['size'])
-        total_records = int(req_data['paging']['total'])
 
         logger.debug(f"First page data: {req_data['paging']}")
         if req_data['paging']['has_more'] is False:
@@ -323,7 +319,7 @@ class CRM5BackofficeAdmin:
         return req_data
 
     def _fetch_all_parallel_search_max(self, pages_dict: dict, method: str,
-            url: str, json_data: dict=None, headers: dict=None, get_params: dict=None) -> tuple[int, int]:
+            url: str, json_data: dict | None = None, headers: dict | None = None, get_params: dict | None = None) -> tuple[int, int]:
         """Find the last page of a paginated result set.
 
         Uses an exponential probe (page 1, 10, 100, ...) to find an upper
@@ -403,8 +399,8 @@ class CRM5BackofficeAdmin:
 
         return -1,-1
 
-    def _fetch_all_parallel(self, method: str, url: str, json_data: dict=None,
-                            headers: dict=None, get_params: dict=None, thread_count: int = None
+    def _fetch_all_parallel(self, method: str, url: str, json_data: dict | None = None,
+                            headers: dict | None = None, get_params: dict | None = None, thread_count: int | None = None
                             ) -> dict:
         """Make parallel requests to fetch the complete result set.
 
@@ -615,7 +611,7 @@ class CRM5BackofficeAdmin:
         self._password_expired = auth_data['password_expired']
 
 
-    def _section_list_handler(self, rel_url: str, section_id: str=None, search_params: dict=None, parallel: bool=False) -> dict:
+    def _section_list_handler(self, rel_url: str, section_id: str | None = None, search_params: dict | None = None, parallel: bool = False) -> dict:
         """A generic section handler.
 
         This can be used to fetch a single entity specified by the section_id.
@@ -696,10 +692,7 @@ class CRM5BackofficeAdmin:
 
         req_data = req.json()
 
-        if req_data['id'] == activity_id:
-            return True
-
-        return False
+        return req_data['id'] == activity_id
 
     def contacts(self, contact_id=None, search_params=None, parallel=False):
         """List contacts meeting criteria, or fetch a single contact by id.
@@ -768,10 +761,7 @@ class CRM5BackofficeAdmin:
 
         req_data = req.json()
 
-        if req_data['id'] == contact_id:
-            return True
-
-        return False
+        return req_data['id'] == contact_id
 
     def custom_fields(self, custom_field_id=None):
         """Get either all custom fields or a specific one.
@@ -1085,7 +1075,7 @@ class CRM5BackofficeAdmin:
         return self.subscriptions(subscriptions_id, search_params, parallel)
 
     @_deprecated('subscriptions')
-    def subscription(self, subscription_id: str = None):
+    def subscription(self, subscription_id: str | None = None):
         return self.subscriptions(subscription_id)
 
     @_deprecated('subscription_devices')
