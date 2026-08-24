@@ -40,6 +40,23 @@ class TestMakeRequest:
             with pytest.raises(CRM5APIError, match="404.*not found"):
                 api._make_request('GET', '/contacts/missing')
 
+    @pytest.mark.parametrize('status_code', [200, 201, 202, 204])
+    def test_accepts_any_2xx_status(self, api, status_code):
+        response = FakeResponse(status_code=status_code, json_data={'ok': True})
+
+        with patch('crm5_bo.crm5_bo.requests.request', return_value=response):
+            result = api._make_request('POST', '/contacts')
+
+        assert result is response
+
+    @pytest.mark.parametrize('status_code', [301, 400, 500])
+    def test_rejects_non_2xx_status(self, api, status_code):
+        response = FakeResponse(status_code=status_code, text='problem')
+
+        with patch('crm5_bo.crm5_bo.requests.request', return_value=response):
+            with pytest.raises(CRM5APIError, match=f"{status_code}.*problem"):
+                api._make_request('GET', '/contacts')
+
     def test_passes_through_method_json_and_headers(self, api):
         response = FakeResponse(status_code=200, json_data={'id': '123'})
         headers = api._auth_headers()

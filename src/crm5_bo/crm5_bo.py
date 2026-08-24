@@ -187,7 +187,7 @@ class CRM5BackofficeAdmin:
         if self._debug_state:
             logger.debug(f"Return body: {req.text}")
 
-        if req.status_code != 200:
+        if not (200 <= req.status_code < 300):
             # Error we need to handle
             if self._debug_state:
                 logger.error(f"Recv error code: {req.status_code}")
@@ -434,12 +434,8 @@ class CRM5BackofficeAdmin:
             }
 
             for future in as_completed(future_to_url):
-                page_id = future_to_url[future]
-                try:
-                    page_id, result = future.result()
-                    pages_dict[page_id] = result
-                except Exception as exc:
-                    print(f"Error: {page_id} generated an exception: {exc}")
+                page_id, result = future.result()
+                pages_dict[page_id] = result
 
         # We should now have pages_dict fully populated
         for curr_page_data in pages_dict.values():

@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 from helpers import make_page
 
 
@@ -94,3 +96,17 @@ class TestFetchAllParallel:
             result = api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
 
         assert result['paging']['total'] == len(result['content']) == 25
+
+    def test_propagates_exception_from_a_failed_page_fetch(self, api):
+        # 45 records at 10/page -> pages 2, 3, 4 are fetched in the parallel
+        # phase (after the search-max probe already resolved pages 1 and 5).
+        dataset = _paged_dataset(total_records=45, page_size=10)
+
+        def flaky_fetch_page(*, page_num=None, **kwargs):
+            if page_num == 2:
+                raise RuntimeError('boom')
+            return dataset(page_num=page_num, **kwargs)
+
+        with patch.object(api, '_fetch_page', side_effect=flaky_fetch_page):
+            with pytest.raises(RuntimeError, match='boom'):
+                api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
