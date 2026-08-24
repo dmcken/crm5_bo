@@ -921,6 +921,25 @@ class CRM5BackofficeAdmin:
             parallel=parallel,
         )
 
+    def service_request_update(self, service_request_id: str, update_body: dict):
+        """Update a service request.
+
+        API Documentation:
+        https://speca.io/CRM/backoffice-admin#update-service-request-v
+
+        Args:
+            service_request_id (str): Service request ID (GUID).
+            update_body (dict): Body of request.
+        """
+        req = self._make_request(
+            'PUT',
+            f'/service_requests/{service_request_id}',
+            headers=self._auth_headers(),
+            json_data=update_body,
+        )
+
+        return req.json()
+
     def service_update(self, service_id: str, update_body: dict):
         """Update service API call.
 

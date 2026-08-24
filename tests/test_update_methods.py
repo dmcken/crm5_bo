@@ -68,6 +68,25 @@ class TestSubscriptionUpdate:
         )
 
 
+class TestServiceRequestUpdate:
+
+    def test_puts_update_body_and_returns_json(self, api):
+        response = FakeResponse(json_data={'id': 'sr-1', 'custom_fields': [{'key': 'activity_for_post_visit', 'value': 'A045407'}]})
+        with patch('crm5_bo.crm5_bo.requests.request', return_value=response) as mock_request:
+            result = api.service_request_update('sr-1', {
+                'custom_fields': [{'key': 'activity_for_post_visit', 'value': 'A045407'}],
+            })
+
+        assert result == {'id': 'sr-1', 'custom_fields': [{'key': 'activity_for_post_visit', 'value': 'A045407'}]}
+        mock_request.assert_called_once_with(
+            'PUT',
+            'https://example.crm.com/backoffice/v2/service_requests/sr-1',
+            json={'custom_fields': [{'key': 'activity_for_post_visit', 'value': 'A045407'}]},
+            headers=api._auth_headers(),
+            timeout=api._timeout,
+        )
+
+
 class TestServiceUpdate:
 
     def test_puts_update_body_and_returns_json(self, api):
