@@ -10,32 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from helpers import FakeResponse, make_page
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "_fetch_all_parallel computes paging.total as "
-        "`max_page * get_params['size'] + last_page_size`, which counts the "
-        "last (possibly partial) page as a full page, overcounting the true "
-        "total by one page size. See crm5_bo.py _fetch_all_parallel."
-    ),
-)
-def test_fetch_all_parallel_total_matches_fetched_content_length(api):
-    def fake_fetch_page(*, method, url, json_data, headers, get_params, page_num=None):
-        page_size = 10
-        total_records = 25
-        page_num = page_num or 1
-        start = (page_num - 1) * page_size
-        end = min(start + page_size, total_records)
-        content = [{'id': i} for i in range(start, end)] if start < total_records else []
-        return make_page(content=content, page=page_num, size=len(content), has_more=end < total_records)
-
-    with patch.object(api, '_fetch_page', side_effect=fake_fetch_page):
-        result = api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
-
-    assert result['paging']['total'] == len(result['content'])
+from helpers import FakeResponse
 
 
 @pytest.mark.xfail(

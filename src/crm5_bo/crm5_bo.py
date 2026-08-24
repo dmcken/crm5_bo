@@ -446,7 +446,7 @@ class CRM5BackofficeAdmin:
             req_data['content'].extend(curr_page_data['content'])
 
         req_data['paging']['pages'] = max_page
-        req_data['paging']['total'] = (max_page * get_params['size']) + last_page_size
+        req_data['paging']['total'] = ((max_page - 1) * get_params['size']) + last_page_size
 
         return req_data
 

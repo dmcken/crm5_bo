@@ -86,3 +86,11 @@ class TestFetchAllParallel:
             result = api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
 
         assert result['content'] == [{'id': 0}, {'id': 1}]
+
+    def test_total_matches_fetched_content_length(self, api):
+        fake_fetch_page = _paged_dataset(total_records=25, page_size=10)
+
+        with patch.object(api, '_fetch_page', side_effect=fake_fetch_page):
+            result = api._fetch_all_parallel('GET', '/contacts', get_params={'size': 10})
+
+        assert result['paging']['total'] == len(result['content']) == 25
