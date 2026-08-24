@@ -589,7 +589,7 @@ class CRM5BackofficeAdmin:
         self._password_expired = auth_data['password_expired']
 
 
-    def _section_list_handler(self, rel_url: str, section_id: str=None, search_params=None, parallel: bool=False):
+    def _section_list_handler(self, rel_url: str, section_id: str=None, search_params: dict=None, parallel: bool=False) -> dict:
         """A generic section handler.
 
         This can be used to fetch a single entity specified by the section_id.
@@ -597,12 +597,18 @@ class CRM5BackofficeAdmin:
 
 
         Args:
-            rel_url (_type_): _description_
-            section_id (_type_, optional): _description_. Defaults to None.
-            search_params (_type_, optional): _description_. Defaults to None.
+            rel_url (str): Relative API path for this resource, e.g. '/contacts'.
+            section_id (str, optional): Id (UUID) of a single entity to
+                fetch. When given, fetches that entity instead of listing.
+                Defaults to None.
+            search_params (dict, optional): Query string / search parameters
+                for a list request. Defaults to None.
+            parallel (bool, optional): Whether to fetch multiple pages in
+                parallel when listing. Defaults to False.
 
         Returns:
-            _type_: _description_
+            dict: Either the single entity (when section_id is given) or the
+                (possibly paginated) listing.
         """
         logger.debug(
             f"Entered _section_list_handler: {rel_url} # {section_id} # {search_params} # {parallel}"
