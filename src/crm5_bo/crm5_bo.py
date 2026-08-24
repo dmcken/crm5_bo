@@ -125,10 +125,11 @@ class CRM5BackofficeAdmin:
         """Build the full URL for making a request.
 
         Args:
-            relative_url (str): _description_
+            relative_url (str): API path relative to the backoffice base
+                path, e.g. '/contacts'.
 
         Returns:
-            str: _description_
+            str: The full HTTPS URL for the request.
         """
         base_url = f"{self._backoffice_url}{relative_url}"
 
