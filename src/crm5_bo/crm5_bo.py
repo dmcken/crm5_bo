@@ -231,18 +231,19 @@ class CRM5BackofficeAdmin:
             req_data['paging']['total'] = req_data['paging']['size']
         return req_data
 
-    def _fetch_all(self, method: str, url: str, json_data=None, headers=None, get_params=None) -> dict:
+    def _fetch_all(self, method: str, url: str, json_data: dict=None, headers: dict=None, get_params: dict=None) -> dict:
         """Make iterative requests to fetch the complete result set.
 
         Args:
             method (str): HTTP method to use.
-            url (str): _description_
-            json_data (_type_, optional): _description_. Defaults to None.
-            headers (_type_, optional): _description_. Defaults to None.
-            get_params (_type_, optional): _description_. Defaults to None.
+            url (str): URL to request, relative to the backoffice base path.
+            json_data (dict, optional): JSON data to post. Defaults to None.
+            headers (dict, optional): Headers to use for request. Defaults to None.
+            get_params (dict, optional): Query string / search parameters. Defaults to None.
 
         Returns:
-            dict: _description_
+            dict: The combined response, with 'content' extended across all
+                pages and 'paging' reflecting the full result set.
         """
         logger.debug(f"Fetch all {method} -> {url}")
         if get_params is None:
