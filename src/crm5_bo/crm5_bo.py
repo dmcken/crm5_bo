@@ -228,10 +228,7 @@ class CRM5BackofficeAdmin:
         Returns:
             dict: The page's response body, with 'content' and 'paging' keys.
         """
-        if get_params is None:
-            get_params = {}
-        else:
-            get_params = dict(get_params)
+        get_params = {} if get_params is None else dict(get_params)
         if 'size' not in get_params:
             get_params['size'] = self._default_page_size
         if page_num is not None:
