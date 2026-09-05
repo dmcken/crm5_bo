@@ -163,3 +163,9 @@ cython_debug/
 *.json
 
 .env_*
+
+
+# Ignore files used for testing runs
+*.csv
+*.xls
+*.xlsx
