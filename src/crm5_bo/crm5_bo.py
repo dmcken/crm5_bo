@@ -109,6 +109,69 @@ class CRM5BackofficeAdmin:
         '''
         return {v['key']:v['value'] for v in custom_fields}
 
+    def merge_custom_fields(self, existing_custom_fields: list[dict[str, str]], updates: dict[str, str]) -> list[dict[str, str]]:
+        '''Merge custom field updates into an existing custom_fields array.
+
+        Warning:
+            Every `*_update` PUT endpoint REPLACES the entire `custom_fields`
+            array with whatever is sent - it does not merge/patch it (see
+            QUIRKS.md). `activity_update`, `contact_update`,
+            `service_request_update`, and `subscription_update` all use this
+            method internally by default (their `merge_custom_fields=True`
+            default), so you normally don't need to call it yourself for
+            those - just pass the field(s) you're changing and it's handled.
+            `service_update` is the one exception: there is no endpoint to
+            fetch a service's current state from, so it can't merge
+            automatically - call this method yourself there if you need to
+            preserve existing custom fields.
+
+        Args:
+            existing_custom_fields (list[dict[str, str]]): The record's
+                current `custom_fields` array, as returned by the API (e.g.
+                fetched with `include_custom_fields=true`).
+            updates (dict[str, str]): Field keys to set/overwrite, mapped to
+                their new values.
+
+        Returns:
+            list[dict[str, str]]: The full custom_fields array, ready to
+                send as-is in an update body.
+        '''
+        merged = self.fields_to_dict(existing_custom_fields)
+        merged.update(updates)
+        return [{'key': key, 'value': value} for key, value in merged.items()]
+
+    def _merge_custom_fields_into_update_body(self, update_body: dict, fetch_current) -> dict:
+        '''Return a copy of `update_body` with its `custom_fields` merged
+        into the record's current state, if `custom_fields` is present.
+
+        Used by the `*_update` methods to make merging the default,
+        safe behaviour (see QUIRKS.md) without duplicating this in each one.
+
+        Args:
+            update_body (dict): The caller's update body. Left untouched;
+                a copy is returned.
+            fetch_current (Callable[[], dict]): Zero-arg callable that fetches
+                the record's current state (with its `custom_fields` array).
+                Only called if `update_body` actually contains
+                `custom_fields`, since it costs an extra request.
+
+        Returns:
+            dict: A copy of `update_body`, with `custom_fields` (if present)
+                replaced by the full merged array.
+        '''
+        if 'custom_fields' not in update_body:
+            return update_body
+
+        incoming = update_body['custom_fields']
+        incoming_updates = self.fields_to_dict(incoming) if isinstance(incoming, list) else incoming
+
+        current_record = fetch_current()
+        existing_custom_fields = current_record.get('custom_fields') or []
+
+        update_body = dict(update_body)
+        update_body['custom_fields'] = self.merge_custom_fields(existing_custom_fields, incoming_updates)
+        return update_body
+
     def debug(self, debug_state: bool | None = None) -> bool:
         """Get / Set debug state.
 
@@ -659,17 +722,36 @@ class CRM5BackofficeAdmin:
             parallel=parallel,
         )
 
-    def activity_update(self, activity_id: str, activity_update: dict) -> bool:
+    def activity_update(self, activity_id: str, activity_update: dict, merge_custom_fields: bool = True) -> bool:
         """Update an activity.
+
+        Note:
+            The underlying PUT REPLACES the entire `custom_fields` array
+            rather than merging into it (see QUIRKS.md), so by default, if
+            `activity_update` includes a `custom_fields` key, this method
+            fetches the activity's current custom fields first and merges
+            your changes into them - costing an extra request, but you'll
+            never silently wipe out other custom fields. Pass
+            `merge_custom_fields=False` to send `custom_fields` exactly as
+            given (a real replace), e.g. if you've already merged it
+            yourself.
 
         Args:
             activity_id (str): Id of the activity to update.
             activity_update (dict): Fields to update on the activity.
+            merge_custom_fields (bool, optional): Merge `custom_fields` into
+                the activity's existing ones instead of replacing them.
+                Defaults to True.
 
         Returns:
             bool: True if the update succeeded (the response id matches
                 activity_id), False otherwise.
         """
+        if merge_custom_fields:
+            activity_update = self._merge_custom_fields_into_update_body(
+                activity_update, lambda: self.activities(activity_id),
+            )
+
         req = self._make_request(
             'PUT',
             f'/activities/{activity_id}',
@@ -728,17 +810,36 @@ class CRM5BackofficeAdmin:
 
         return req.json()['content']
 
-    def contact_update(self, contact_id: str, contact_update: dict) -> bool:
+    def contact_update(self, contact_id: str, contact_update: dict, merge_custom_fields: bool = True) -> bool:
         """Update a contact.
+
+        Note:
+            The underlying PUT REPLACES the entire `custom_fields` array
+            rather than merging into it (see QUIRKS.md), so by default, if
+            `contact_update` includes a `custom_fields` key, this method
+            fetches the contact's current custom fields first and merges
+            your changes into them - costing an extra request, but you'll
+            never silently wipe out other custom fields. Pass
+            `merge_custom_fields=False` to send `custom_fields` exactly as
+            given (a real replace), e.g. if you've already merged it
+            yourself.
 
         Args:
             contact_id (str): Id of the contact to update.
             contact_update (dict): Fields to update on the contact.
+            merge_custom_fields (bool, optional): Merge `custom_fields` into
+                the contact's existing ones instead of replacing them.
+                Defaults to True.
 
         Returns:
             bool: True if the update succeeded (the response id matches
                 contact_id), False otherwise.
         """
+        if merge_custom_fields:
+            contact_update = self._merge_custom_fields_into_update_body(
+                contact_update, lambda: self.contacts(contact_id),
+            )
+
         req = self._make_request(
             'PUT',
             f'/contacts/{contact_id}',
@@ -905,16 +1006,36 @@ class CRM5BackofficeAdmin:
             parallel=parallel,
         )
 
-    def service_request_update(self, service_request_id: str, update_body: dict):
+    def service_request_update(self, service_request_id: str, update_body: dict, merge_custom_fields: bool = True):
         """Update a service request.
 
         API Documentation:
         https://speca.io/CRM/backoffice-admin#update-service-request-v
 
+        Note:
+            The underlying PUT REPLACES the entire `custom_fields` array
+            rather than merging into it (see QUIRKS.md), so by default, if
+            `update_body` includes a `custom_fields` key, this method
+            fetches the service request's current custom fields first and
+            merges your changes into them - costing an extra request, but
+            you'll never silently wipe out other custom fields. Pass
+            `merge_custom_fields=False` to send `custom_fields` exactly as
+            given (a real replace), e.g. if you've already merged it
+            yourself.
+
         Args:
             service_request_id (str): Service request ID (GUID).
             update_body (dict): Body of request.
+            merge_custom_fields (bool, optional): Merge `custom_fields` into
+                the service request's existing ones instead of replacing
+                them. Defaults to True.
         """
+        if merge_custom_fields:
+            update_body = self._merge_custom_fields_into_update_body(
+                update_body,
+                lambda: self.service_requests(service_request_id, search_params={'include_custom_fields': 'true'}),
+            )
+
         req = self._make_request(
             'PUT',
             f'/service_requests/{service_request_id}',
@@ -929,6 +1050,18 @@ class CRM5BackofficeAdmin:
 
         API Documentation:
         https://crmcom.stoplight.io/docs/stoplight-api-doc/339e1a0af4eab-update-service
+
+        Warning:
+            If `update_body` includes a `custom_fields` key, it REPLACES the
+            entire custom_fields array rather than merging into it - see
+            QUIRKS.md. Unlike the other `*_update` methods, this one has NO
+            `merge_custom_fields` option and cannot merge automatically:
+            there is no `GET /services/{id}` (or `GET /services`) endpoint
+            in this API at all to fetch a service's current state from -
+            services are only readable as sub-objects of other resources
+            (e.g. `contact_services()`). If you know the owning contact,
+            fetch the service from there, build the merged array yourself
+            with `merge_custom_fields()`, and pass the result here.
 
         Args:
             service_id (str): Service ID
@@ -975,16 +1108,35 @@ class CRM5BackofficeAdmin:
 
         return req.json()['content']
 
-    def subscription_update(self, subscription_id: str, update_body: dict):
+    def subscription_update(self, subscription_id: str, update_body: dict, merge_custom_fields: bool = True):
         """Update subscription API call.
 
         API Documentation:
         https://crmcom.stoplight.io/docs/stoplight-api-doc/f4ad7c1a7ba99-update-subscription
 
+        Note:
+            The underlying PUT REPLACES the entire `custom_fields` array
+            rather than merging into it (see QUIRKS.md), so by default, if
+            `update_body` includes a `custom_fields` key, this method
+            fetches the subscription's current custom fields first and
+            merges your changes into them - costing an extra request, but
+            you'll never silently wipe out other custom fields. Pass
+            `merge_custom_fields=False` to send `custom_fields` exactly as
+            given (a real replace), e.g. if you've already merged it
+            yourself.
+
         Args:
             subscription_id (str): Subscription ID
             update_body (dict): Body of request
+            merge_custom_fields (bool, optional): Merge `custom_fields` into
+                the subscription's existing ones instead of replacing them.
+                Defaults to True.
         """
+        if merge_custom_fields:
+            update_body = self._merge_custom_fields_into_update_body(
+                update_body, lambda: self.subscriptions(subscription_id),
+            )
+
         req = self._make_request(
             'PUT',
             f'/subscriptions/{subscription_id}',

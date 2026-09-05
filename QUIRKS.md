@@ -2,10 +2,72 @@
 
 Undocumented (or mis-documented) behavior discovered while working against
 the live `app.crm.com` backoffice v2 API, kept here so it isn't rediscovered
-the hard way next time. All findings below were confirmed with read-only
-`GET` requests against the live GD account on 2026-08-23.
+the hard way next time. Findings below were confirmed with read-only `GET`
+requests against the live GD account on the date noted in each section.
+
+## ⚠️ `PUT .../{id}` REPLACES the entire `custom_fields` array — it does not merge/patch it
+
+**Confirmed 2026-08-24, and this one caused real data loss before it was caught.**
+
+**Symptom:** Any `*_update` PUT call whose body includes a `custom_fields`
+key (e.g. `[{"key": "activity_for_post_visit", "value": "A045407"}]`)
+overwrites the record's *entire* `custom_fields` array with exactly what
+was sent — every other custom field previously set on that record is
+silently deleted, not preserved. This is not a PATCH-style partial update
+despite the field being a list of individual key/value pairs, which looks
+exactly like something you'd expect to merge.
+
+**Confirmed impact:** `update_sr_activity_for_post_visit.py`'s first version
+sent only `{"custom_fields": [{"key": "activity_for_post_visit", "value": ...}]}`
+per service request. Re-reading a sample of the updated service requests
+afterward showed most of them left with `custom_fields` containing *only*
+`activity_for_post_visit` — other fields resolved SRs commonly carry (e.g.
+`resolution`, which was the single most common key across an earlier
+100-record sample) were gone. Read-only confirmation, 15 SRs sampled from
+`sr_to_update.csv` after an `--execute` run:
+
+```
+S119442: custom_field_keys=['resolution', 'activity_for_post_visit']   # not clobbered (started empty, both fields set correctly)
+S119834: custom_field_keys=['activity_for_post_visit']                 # everything else gone
+S120067: custom_field_keys=['activity_for_post_visit']
+S120341: custom_field_keys=['activity_for_post_visit']
+... (11 more, same pattern)
+```
+
+**Scope: this is not specific to service requests.** The same `custom_fields`
+array shape and the same PUT-replaces-not-merges behavior applies to every
+`*_update` endpoint that accepts custom fields — contacts, activities,
+subscriptions, and services, not just service requests. Any code (in this
+library's callers, not just this one script) that PUTs a partial
+`custom_fields` list to any of these endpoints has the same exposure.
+
+**Workaround:** Never send a partial `custom_fields` list. Always fetch the
+record first (with `include_custom_fields=true`), merge your changes into
+its *existing* `custom_fields`, and send the full merged array. Use
+`CRM5BackofficeAdmin.merge_custom_fields()` for this — it takes the
+record's current `custom_fields` array plus a `{key: value}` dict of what
+you're changing, and returns the full array ready to PUT:
+
+```python
+service_request = api.service_requests(sr_id)  # or search_value lookup
+merged = api.merge_custom_fields(
+    service_request.get('custom_fields') or [],
+    {'activity_for_post_visit': 'A045407'},
+)
+api.service_request_update(sr_id, {'custom_fields': merged})
+```
+
+Every `*_update` method's docstring (`activity_update`, `contact_update`,
+`service_request_update`, `service_update`, `subscription_update`) now
+carries a warning pointing back here. `update_sr_activity_for_post_visit.py`
+was fixed to do this after the fact — the SRs already clobbered by the
+original run were **not** automatically recovered; whether that's possible
+depends on whatever change history CRM.com itself retains, which hasn't
+been checked.
 
 ## `GET /service_requests` silently ignores the `number` filter
+
+**Confirmed 2026-08-23.**
 
 **Symptom:** Filtering the service requests list by the human-readable
 ticket number (e.g. `S119442`, the value shown in the `number` field of a
@@ -45,6 +107,8 @@ lookups (don't set an aggressive client-side timeout below the library's
 default 60s).
 
 ## `GET /custom_fields?entity=<anything>` returns `500` — endpoint is broken for every entity, not just service requests
+
+**Confirmed 2026-08-23/24.**
 
 **Symptom:** The documented "List Custom Fields" endpoint
 (`GET /custom_fields`) requires an `entity` query parameter (enum, e.g.

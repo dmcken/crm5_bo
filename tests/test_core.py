@@ -29,6 +29,35 @@ class TestFieldsToDict:
         assert api.fields_to_dict(custom_fields) == {'a': '2'}
 
 
+class TestMergeCustomFields:
+
+    def test_adds_a_new_key_without_dropping_existing_ones(self, api):
+        existing = [
+            {'key': 'resolution', 'value': 'CUSTOMER CONTACT AND INFORMATION PROVIDED'},
+            {'key': 'contractor_interaction', 'value': 'yes'},
+        ]
+
+        merged = api.merge_custom_fields(existing, {'activity_for_post_visit': 'A045407'})
+
+        assert api.fields_to_dict(merged) == {
+            'resolution': 'CUSTOMER CONTACT AND INFORMATION PROVIDED',
+            'contractor_interaction': 'yes',
+            'activity_for_post_visit': 'A045407',
+        }
+
+    def test_overwrites_an_existing_key_in_place(self, api):
+        existing = [{'key': 'activity_for_post_visit', 'value': 'OLD'}]
+
+        merged = api.merge_custom_fields(existing, {'activity_for_post_visit': 'NEW'})
+
+        assert api.fields_to_dict(merged) == {'activity_for_post_visit': 'NEW'}
+
+    def test_starts_from_an_empty_array(self, api):
+        merged = api.merge_custom_fields([], {'activity_for_post_visit': 'A045407'})
+
+        assert api.fields_to_dict(merged) == {'activity_for_post_visit': 'A045407'}
+
+
 class TestBuildUrl:
 
     def test_builds_https_backoffice_url(self, api):
