@@ -856,6 +856,13 @@ class CRM5BackofficeAdmin:
 
         https://crmcom.stoplight.io/docs/stoplight-api-doc/9ae36ade79cf3-list-custom-fields
 
+        Warning:
+            Listing (`custom_field_id=None`) does not currently work on at
+            least one live account - the API 500s regardless of the
+            `entity` filter used. Fetching a single field by id works fine.
+            See QUIRKS.md. There's no known way to discover a field's id via
+            the API; it's visible in the admin UI's edit-custom-field URL.
+
         Args:
             custom_field_id (str, optional): Fetch a single custom field by
                 id instead of listing all. Defaults to None.
@@ -864,8 +871,7 @@ class CRM5BackofficeAdmin:
             dict: Either the single custom field (if custom_field_id is
                 given) or the full listing.
         """
-        path = f'/custom_fields/{custom_field_id}' if custom_field_id is not None else '/custom_fields'
-        return self._section_list_handler(path)
+        return self._section_list_handler('/custom_fields', section_id=custom_field_id)
 
     def devices(self, device_id=None, search_params=None, parallel=False):
         '''Get list of devices, or a single device by id.

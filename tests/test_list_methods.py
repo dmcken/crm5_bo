@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from helpers import FakeResponse
 
 # (method name, rel_url, id kwarg name)
 LIST_METHODS = [
@@ -52,13 +53,31 @@ class TestCustomFields:
         with patch.object(api, '_section_list_handler') as mock_handler:
             api.custom_fields()
 
-        mock_handler.assert_called_once_with('/custom_fields')
+        mock_handler.assert_called_once_with('/custom_fields', section_id=None)
 
     def test_fetches_single_field_when_id_given(self, api):
         with patch.object(api, '_section_list_handler') as mock_handler:
             api.custom_fields('field-123')
 
-        mock_handler.assert_called_once_with('/custom_fields/field-123')
+        mock_handler.assert_called_once_with('/custom_fields', section_id='field-123')
+
+    def test_single_field_lookup_ignores_the_definitions_unrelated_content_key(self, api):
+        # Regression test: a single custom field definition has its own
+        # 'content' key (for CONTENT-type fields) which is null for every
+        # other type, e.g. SELECTION. custom_fields(id) must not mistake
+        # that for the pagination-wrapper 'content' _fetch_page checks for
+        # (it did, before this was fixed - see QUIRKS.md).
+        response = FakeResponse(json_data={
+            'id': 'field-123',
+            'key': 'debt_collectors',
+            'type': 'SELECTION',
+            'content': None,
+            'options': [{'key': 'Pending', 'text': 'Pending', 'default': False, 'order_number': 1}],
+        })
+        with patch('crm5_bo.crm5_bo.requests.request', return_value=response):
+            result = api.custom_fields('field-123')
+
+        assert result['options'] == [{'key': 'Pending', 'text': 'Pending', 'default': False, 'order_number': 1}]
 
 
 class TestSalesModels:

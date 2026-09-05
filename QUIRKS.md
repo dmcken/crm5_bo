@@ -106,7 +106,7 @@ variable than plain listing calls during testing — anywhere from ~1s to
 lookups (don't set an aggressive client-side timeout below the library's
 default 60s).
 
-## `GET /custom_fields?entity=<anything>` returns `500` — endpoint is broken for every entity, not just service requests
+## `GET /custom_fields?entity=<anything>` (the list) returns `500` for every entity — but `GET /custom_fields/{id}` (single item) works fine
 
 **Confirmed 2026-08-23/24.**
 
@@ -148,11 +148,9 @@ docs describing `entity` as required and *also* saying custom fields for
 all entities are returned if it's omitted. The two behaviors are
 inconsistent with each other and with the docs.
 
-**Workaround:** There's no known working way to list custom field
-*definitions* via this endpoint on this account, for any entity. To confirm
-whether a given custom field exists and is populated in practice, fetch
-actual records with `include_custom_fields=true` and inspect their
-`custom_fields` arrays instead, e.g.:
+**Workaround for confirming a field is populated in practice:** fetch actual
+records with `include_custom_fields=true` and inspect their `custom_fields`
+arrays, e.g.:
 
 ```python
 page = api._fetch_page(
@@ -166,3 +164,30 @@ keys_seen = {cf['key'] for sr in page['content'] for cf in (sr.get('custom_field
 Note this only proves a field exists if at least one sampled record has a
 value set for it — an unset-everywhere field wouldn't show up this way even
 if it's a valid, defined custom field.
+
+**Better workaround, found 2026-09-05 — the *single-item* GET works fine:**
+`GET /custom_fields/{id}` is not broken, only the list. It returns the full
+field definition, including the `options` array (`key`/`text`/`default`/
+`order_number`) for `SELECTION`-type fields:
+
+```python
+field = api.custom_fields('b165aef0-0bd9-41f0-b03c-4e094ef80681')
+field['options']
+# [{'key': 'Debt Collectors Pending', 'text': 'Debt Collectors - Pending', ...}, ...]
+```
+
+The catch: you need the field's GUID, and there's no working API path to
+look it up by key/entity (that's exactly what's broken above). The GUID is
+visible in the admin UI - open the field under Settings > Platform >
+Custom Fields, and its edit URL is
+`https://app.crm.com/settings/platform/edit-custom-field/{id}`.
+
+This also caught a real bug in this library: `custom_fields(id)` used to
+build `f'/custom_fields/{id}'` and call `_section_list_handler(path)` with
+no `section_id`, so it took the listing code path (`_fetch_all`) instead of
+a direct single-item GET. A field definition's own `content` property
+(present, always `null`, for every type except `CONTENT`) was then mistaken
+for `_fetch_page`'s pagination-wrapper check and raised
+`"Call returned no content, call not implemented"` even though the HTTP
+call had actually succeeded. Fixed by passing `section_id=custom_field_id`
+properly.
