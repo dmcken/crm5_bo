@@ -13,6 +13,12 @@ or
 python3 -m pip install git+https://github.com/dmcken/crm5_bo.git
 ```
 
+Pin to a released version instead of tracking `main` (recommended for
+downstream projects — see [Releasing](#releasing)):
+```
+crm5_bo @ git+https://github.com/dmcken/crm5_bo@0.2.2
+```
+
 Local copy for future developement:
 ```
 git clone https://github.com/dmcken/crm5_bo.git
@@ -56,3 +62,27 @@ uv sync --group test --group lint
 uv run pytest
 uv run ruff check .
 ```
+
+### Releasing
+
+Tags are what downstream projects should pin to
+(`crm5_bo @ git+https://github.com/dmcken/crm5_bo@<version>`) instead of a
+commit hash, so pinning survives a `git log` cleanup and reads as an
+intentional version rather than an arbitrary commit.
+
+1. Bump `__version__` in `src/crm5_bo/__init__.py`.
+2. Commit it (e.g. `Bump version to 0.2.3`).
+3. Tag that commit with the *same* version number, no `v` prefix (so the
+   tag always matches `__version__` exactly - no separate scheme to keep
+   in sync):
+   ```
+   git tag -a 0.2.3 -m "0.2.3"
+   ```
+4. Push both:
+   ```
+   git push && git push origin 0.2.3
+   ```
+
+Downstream projects then pin to that tag instead of a commit SHA. A tag is
+just a ref, so this doesn't stop anyone from still pinning to a specific
+commit if they need something between releases.

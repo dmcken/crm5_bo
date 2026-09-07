@@ -7,6 +7,14 @@ public release announcement.
 
 ## Unreleased
 
+(nothing yet)
+
+## 0.2.2
+
+First tagged release — see [Releasing](README.md#releasing) in the README
+for how tags map to `__version__` going forward. Downstream projects should
+pin to this tag rather than a commit SHA.
+
 ### Added
 - CI (`.github/workflows/ci.yml`): runs `ruff check .` and `pytest` on
   every push/PR to `main`, across Python 3.10/3.11/3.12.
@@ -19,6 +27,25 @@ public release announcement.
 - `src/crm5_bo/py.typed` (PEP 561 marker) — the module has real type hints
   now; this tells type checkers in consuming codebases to use them.
   Confirmed it's actually included in the built wheel.
+- `merge_custom_fields()` and merge-by-default on `activity_update`,
+  `contact_update`, `service_request_update`, `subscription_update`
+  (new `merge_custom_fields=True` parameter). `PUT .../{id}` replaces the
+  entire `custom_fields` array instead of merging into it (see
+  `QUIRKS.md`) — this already caused real data loss on live service
+  requests once, so these methods now fetch-then-merge automatically
+  instead of relying on every caller doing it themselves. Pass
+  `merge_custom_fields=False` for the old raw-replace behavior.
+  `service_update` is the one exception (no `GET /services/{id}` exists to
+  merge against) and stays raw, documented as such.
+
+### Fixed
+- `custom_fields(id)` (single-field lookup) was taking the listing code
+  path instead of a direct GET, and raising "Call returned no content,
+  call not implemented" even though the underlying HTTP call succeeded —
+  a field definition's own `content` property (unrelated to pagination)
+  was tripping `_fetch_page`'s content check. See `QUIRKS.md` for the
+  related discovery that `GET /custom_fields/{id}` works fine even though
+  the list endpoint doesn't.
 
 ### Removed
 - `.pylintrc` — unused; nothing referenced it and ruff has taken over
