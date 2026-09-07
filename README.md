@@ -70,19 +70,16 @@ Tags are what downstream projects should pin to
 commit hash, so pinning survives a `git log` cleanup and reads as an
 intentional version rather than an arbitrary commit.
 
-1. Bump `__version__` in `src/crm5_bo/__init__.py`.
-2. Commit it (e.g. `Bump version to 0.2.3`).
-3. Tag that commit with the *same* version number, no `v` prefix (so the
-   tag always matches `__version__` exactly - no separate scheme to keep
-   in sync):
-   ```
-   git tag -a 0.2.3 -m "0.2.3"
-   ```
-4. Push both:
-   ```
-   git push && git push origin 0.2.3
-   ```
+Tagging is automatic (see the `tag-release` job in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml)): on every push to
+`main`, once the test matrix passes, CI reads `__version__` straight out of
+`src/crm5_bo/__init__.py` and pushes a tag with that exact string (no `v`
+prefix, so the tag can never drift from `__version__`) - unless a tag with
+that name already exists, in which case it's a no-op. So a release is just:
 
-Downstream projects then pin to that tag instead of a commit SHA. A tag is
-just a ref, so this doesn't stop anyone from still pinning to a specific
-commit if they need something between releases.
+1. Bump `__version__` in `src/crm5_bo/__init__.py`.
+2. Commit and push to `main` (e.g. `Bump version to 0.2.3`).
+
+CI does the rest. Downstream projects then pin to that tag instead of a
+commit SHA. A tag is just a ref, so this doesn't stop anyone from still
+pinning to a specific commit if they need something between releases.

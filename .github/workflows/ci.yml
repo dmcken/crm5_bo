@@ -31,3 +31,37 @@ jobs:
 
       - name: Test (pytest)
         run: uv run pytest -v
+
+  tag-release:
+    name: Tag release
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from __init__.py
+        id: version
+        run: echo "version=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/crm5_bo/__init__.py)" >> "$GITHUB_OUTPUT"
+
+      - name: Tag if this version isn't already tagged
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            echo "Could not extract __version__ from src/crm5_bo/__init__.py" >&2
+            exit 1
+          fi
+          if git rev-parse "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists, nothing to do."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "$VERSION"
+          git push origin "$VERSION"
