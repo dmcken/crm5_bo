@@ -7,7 +7,17 @@ public release announcement.
 
 ## Unreleased
 
-(nothing yet)
+### Fixed
+- `contact_services()` now paginates through every page via `_fetch_all`
+  (like `products()`, `contacts()`, etc.) instead of making a single
+  one-off request. Found live: a contact with 15 services and the
+  endpoint's default page size of 10 had services 11-15 silently
+  dropped, with no error - for coremiddleware specifically, this was the
+  customer's actual internet package ("Preferred Pro"), with only
+  unrelated OTT add-ons (which happened to fall on page 1) making it
+  into the sync. `contact_services_list`/`list_contact_services`
+  (deprecated aliases) inherit the fix for free, since both just call
+  `contact_services()`.
 
 ## 0.2.2
 

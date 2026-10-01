@@ -790,15 +790,23 @@ class CRM5BackofficeAdmin:
 
         Docs:
         https://speca.io/CRM/backoffice-admin#list-contact-services
-        '''
-        req = self._make_request(
-            'GET',
-            f"/contacts/{contact_id}/services?"
-            "include_order_info=true&include_subscription=true&include_total=true",
-            headers=self._auth_headers(),
-        )
 
-        return req.json()
+        Paginates through every page via _fetch_all (same as products(),
+        contacts(), etc.) rather than a one-off single request - a contact
+        with more than one page of services (page size defaults to 10)
+        previously had everything past the first page silently dropped,
+        with no error, no log, nothing to indicate data was missing.
+        '''
+        return self._fetch_all(
+            'GET',
+            f"/contacts/{contact_id}/services",
+            headers=self._auth_headers(),
+            get_params={
+                'include_order_info': 'true',
+                'include_subscription': 'true',
+                'include_total': 'true',
+            },
+        )
 
     def contact_subscriptions(self, contact_id: str) -> list:
         '''Fetch a contact's subscriptions list.'''
