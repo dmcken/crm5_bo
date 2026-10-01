@@ -7,6 +7,10 @@ public release announcement.
 
 ## Unreleased
 
+(nothing yet)
+
+## 0.2.3
+
 ### Fixed
 - `contact_services()` now paginates through every page via `_fetch_all`
   (like `products()`, `contacts()`, etc.) instead of making a single
